@@ -1,0 +1,36 @@
+# .NET build output
+**/bin/
+**/obj/
+*.user
+*.suo
+*.userprefs
+*.rsuser
+
+# IDEs
+.vs/
+.idea/
+.vscode/
+
+# Node / frontend
+node_modules/
+dist/
+*.local
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+
+# Tests and coverage
+TestResults/
+coverage/
+*.coverage
+*.trx
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Local reference material (not part of the solution)
+.agents.zip
