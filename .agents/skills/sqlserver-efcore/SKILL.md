@@ -16,7 +16,7 @@ Changing the DbContext, entity configuration, migrations, queries or storage ini
 - Index on `Status` (list filter and Worker polling).
 - Status stored as string for readability.
 - Reproducible initialization: committed EF migrations + documented `dotnet ef database update`
-  (or startup migration in Development — decide and record in Phase 01).
+  (TD-16: explicit command only, no migration at application startup).
 
 ## Required Rules
 

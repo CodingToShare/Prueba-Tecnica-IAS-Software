@@ -176,6 +176,18 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
   applying it to an empty database is pending (Phase 01.3).
 - **Future evolution:** idempotent SQL script (`dotnet ef migrations script --idempotent`) for deployed environments.
 
+### TD-17 — Persistence integration tests against SQL Server LocalDB (resolves OD-04)
+
+- **Context:** Idempotency relies on the SQL Server UNIQUE index; tests must exercise real relational behavior.
+- **Alternatives:** EF InMemory (does not enforce unique indexes or relational behavior); SQLite in-memory (different
+  engine, collation and error codes); Testcontainers (requires Docker, out of scope).
+- **Decision:** persistence integration tests run against SQL Server LocalDB on a dedicated test database, created
+  from the committed migrations by the test fixture. Domain tests stay pure (no database). Recorded 2026-11-14 (Phase 01.2).
+- **Trade-off:** those tests need Windows + LocalDB; a reviewer without it can point the tests to another SQL Server
+  via configuration (to be documented in Phase 01.3/06).
+- **Risks:** slower tests; leftover test databases → fixture drops its database.
+- **Validation:** pending — Phase 01.3 provides the test evidence.
+
 ---
 
 ## Assumptions
@@ -196,4 +208,4 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 | OD-01 | .NET 10 SDK is not installed (only 8.0.403): install it, or record a fallback to .NET 8 LTS (EF Core 8)? | Before Phase 01 (user) | Resolved 2026-11-14: user installed SDK 10.0.404; TD-01 unchanged |
 | OD-02 | Which fields define an "equivalent" replay (proposal: `customerId`, `serviceCode`, `description` after trimming)? | 02 | Open |
 | OD-03 | Database initialization: `dotnet ef database update` vs automatic migration at API startup in Development? | 01 | Resolved 2026-11-14 → TD-16 (explicit migrations) |
-| OD-04 | Persistence tests: SQLite in-memory (enforces UNIQUE) vs LocalDB? | 02 | Open |
+| OD-04 | Persistence tests: SQLite in-memory (enforces UNIQUE) vs LocalDB? | 02 | Resolved 2026-11-14 → TD-17 (LocalDB); test evidence pending 01.3 |

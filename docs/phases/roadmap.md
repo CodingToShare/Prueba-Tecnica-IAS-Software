@@ -12,7 +12,7 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 00.1 | AI governance and usage evidence | 5 min | Complete |
 | 01 | Solution foundation and persistence | 15 min | In Progress |
 | 01.1 | Solution, domain and persistence development | 7 min | Complete |
-| 01.2 | (scope set at authorization) | — | Not Started |
+| 01.2 | Requirement, architecture and implementation review | 3 min | Complete |
 | 01.3 | Phase 01 tests and database validation | — | Not Started |
 | 02 | Idempotent API | 22 min | Not Started |
 | 03 | Background processing and resilience | 20 min | Not Started |
@@ -152,6 +152,41 @@ Every item has a command or a place to look; record results in Phase 07 evidence
 - Finding (open): the design contract table has an "Actualizada" column, but the model has no timestamp field
   (not in the 01.1 field list). Decide in Phase 02 (add timestamps + migration) or adjust the column in Phase 04.
 - Timing: see Phase 01.1 commit timestamp.
+
+### Phase 01.2 — Complete (review gate; Phase 01 In Progress)
+
+- Baseline (executed): SDK 10.0.404; `dotnet restore` OK; `dotnet build ServiceRequests.sln --no-restore` → 0 warnings,
+  0 errors; `dotnet tool restore` OK; `dotnet ef migrations list` → `InitialCreate (Pending)` with no connection
+  warnings (`--verbose`).
+- Architecture (from `.csproj`): Core has no package/project references; Infrastructure → Core (+ EF SqlServer);
+  Api/Worker → Infrastructure; Tests → Core + Infrastructure; no cycles. Scope scan (`grep` over src/tests) found no
+  MediatR, AutoMapper, Polly, repositories, hosted services, startup migration, auth, endpoints or cache.
+- Domain: Status/fields have private setters on a sealed class; the only mutators are `MarkProcessing`, `Complete`,
+  `Fail`; each checks the single allowed source state, so Completed and Failed cannot move; constructor trims and
+  rejects null/blank values and starts Pending. No public bypass found (only reflection/EF materialization).
+- Persistence: migration Up matches the configuration (PK `Id`; required `nvarchar(100/50/50/1000)`; `Status`
+  `nvarchar(20)`; nullable `FailureReason nvarchar(500)`; no `nvarchar(max)`; `UX_ServiceRequests_ExternalReference`
+  UNIQUE; `IX_ServiceRequests_Status`). Designer model identical to snapshot;
+  `dotnet ef migrations has-pending-model-changes` → no changes. Config: LocalDB trusted connection, no credentials.
+- OD-03 consistent: no `Migrate()`/`EnsureCreated()` in code; TD-16 explicit command only.
+- Testability: entity is directly constructible (pure unit tests); `ServiceRequestsDbContext` takes
+  `DbContextOptions`, so tests can target a dedicated LocalDB database and apply migrations in a fixture. No
+  production change needed. OD-04 resolved → TD-17 (LocalDB).
+- Findings: no BLOCKER/HIGH/MEDIUM. LOW (fixed): `testing` and `sqlserver-efcore` skills still described OD-04/OD-03
+  as undecided → aligned. Remaining LOW/NOTE items deferred below.
+- Deferred findings (finding · impact · reason · next step):
+  - `ExternalReference` uniqueness follows the database collation (SQL Server defaults are case-insensitive) · `REQ-1`
+    and `req-1` would collide · idempotency semantics belong to Phase 02 · confirm collation in 01.3 and record the
+    comparison rule with OD-02 in Phase 02.
+  - Entity does not enforce max lengths · over-long input would fail at `SaveChanges` · HTTP validation is Phase 02 ·
+    DTO data annotations reuse the `ServiceRequest.*MaxLength` constants.
+  - No timestamps (carried from 01.1) · "Actualizada" column has no data · Phase 02/04 decision · decide with the
+    list endpoint.
+  - No concurrency token · double claim only with multiple Workers · TD-09 single-instance assumption · revisit only
+    if the assumption changes.
+  - Api template `https` launch profile kept without HTTPS redirection · none for local dev · harmless · revisit with
+    CORS/dev origin in Phase 02.
+- Timing: see Phase 01.2 commit timestamp.
 
 ## Unfinished Work Template
 

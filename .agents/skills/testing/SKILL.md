@@ -24,8 +24,8 @@ Risk-ordered coverage:
 - Tests live in `tests/ServiceRequests.Tests`; run with `dotnet test`.
 - Deterministic: no real delays (zero backoff in tests), no randomness without fixed seed, no wall-clock dependence.
 - Mock only boundaries (provider, clock if needed). Prefer real entity behavior over mocking it.
-- Persistence-dependent idempotency tests: use EF Core SQLite in-memory or SQL Server LocalDB — pick in Phase 02,
-  and note that the EF InMemory provider does not enforce unique indexes.
+- Persistence-dependent tests run against SQL Server LocalDB on a dedicated test database built from the migrations
+  (TD-17); not EF InMemory (does not enforce unique indexes) nor SQLite.
 - Use `TheoryData`/`MemberData` where they improve readability, not by obligation.
 - Each phase: focused tests for new code + full `dotnet test` regression.
 - Descriptive names stating condition and expected outcome (e.g. `Complete_WhenAlreadyCompleted_Throws`).

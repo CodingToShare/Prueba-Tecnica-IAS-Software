@@ -13,7 +13,7 @@ Status: `Planned` → `In Progress` → `Verified` (or `Deferred` with reason).
 | R-01 | API registers a request | 02 | `POST /api/requests` | U, M | | Planned |
 | R-02 | API queries requests by status | 02 | `GET /api/requests?status=` | U, M | | Planned |
 | R-03 | Web UI creates a request and shows its status (React) | 04 | `frontend/service-requests-web` | M, R | | Planned |
-| R-04 | Real persistence + reproducible storage initialization | 01 | EF Core migrations, SQL Server | I/M | 01.1: `InitialCreate` generated and listed by `dotnet ef migrations list` (Pending); apply on empty DB pending 01.3 | In Progress |
+| R-04 | Real persistence + reproducible storage initialization | 01 | EF Core migrations, SQL Server | I/M | 01.1: `InitialCreate` generated and listed by `dotnet ef migrations list` (Pending); 01.2: migration matches model (`has-pending-model-changes` → none); apply on empty DB pending 01.3 | In Progress |
 | R-05 | Background process: Pending → simulated provider → status updated; Windows Service path clear | 03, 06 | `ServiceRequests.Worker` | U, M, D | | Planned |
 | R-06 | Automated tests on the most critical behavior | 01–05 | `tests/ServiceRequests.Tests` | U | | Planned |
 | R-07 | Brief log of decisions, assumptions, trade-offs, validations | 00, 06 | `technical-decisions.md`, README | D | | In Progress |
