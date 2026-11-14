@@ -122,10 +122,10 @@ authentication, pagination, DELETE/generic update.
 
 ## Current Phase
 
-Phases 00, 00.1, 01, 02, 03 and 04 complete (React portal in `frontend/service-requests-web`: `npm ci`, `.env.local` from `.env.example`, `npm run dev` on :5173); Phase 05 (test hardening) awaits authorization.
+Phases 00–04 complete (React portal in `frontend/service-requests-web`: `npm ci`, `.env.local` from `.env.example`, `npm run dev` on :5173). Phase 05 In Progress: 05.1 concurrency hardening complete; 05.2–05.4 await authorization.
 Execution guide: `README.md`. API: `POST /api/requests`, `GET /api/requests[?status=]`; CORS origin from
 `Cors:AllowedOrigins` (default `http://localhost:5173`).
-Tests: `dotnet test ServiceRequests.sln` (100: unit incl. Worker, LocalDB integration incl. Worker processing, functional API + Worker host + 500; LocalDB integration, HTTP via WebApplicationFactory; persistence tests use a throwaway LocalDB database, TD-17; override
+Tests: `dotnet test ServiceRequests.sln` (102: unit incl. Worker, LocalDB integration incl. Worker processing, functional API + Worker host + 500; LocalDB integration, HTTP via WebApplicationFactory; persistence tests use a throwaway LocalDB database, TD-17; override
 server with `SERVICEREQUESTS_TEST_SQLSERVER`). Database init (TD-16): `dotnet tool restore`, then
 `dotnet ef database update --project src/ServiceRequests.Infrastructure --startup-project src/ServiceRequests.Api`.
 See `docs/phases/roadmap.md` for status.

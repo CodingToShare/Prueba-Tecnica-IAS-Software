@@ -29,7 +29,11 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 04.2 | UX / architecture / contract review | 3 min | Complete |
 | 04.3 | Build + functional + visual validation | 5 min | Complete |
 | 04.4 | Documentation / evidence / AI | 2 min | Complete |
-| 05 | Critical test hardening | 12 min | Not Started |
+| 05 | Critical test hardening | 12 min | In Progress |
+| 05.1 | Critical test hardening | 4 min | Complete |
+| 05.2 | Test-quality / logging review | 2 min | Not Started |
+| 05.3 | Full delivery regression | 4 min | Not Started |
+| 05.4 | Documentation / evidence | 2 min | Not Started |
 | 06 | Documentation and legacy review | 10 min | Not Started |
 | 07 | Final validation and delivery | 5 min | Not Started |
 | — | Contingency reserve | 5 min | — |
@@ -606,6 +610,32 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   Corrections: list failure tied to its filter (04.1), focus on first invalid field and visible list retry (04.2).
   Commits: 04.1 `b80ff59`, 04.2 `065798c`, 04.3 `3b974a1`, 04.4 this checkpoint (`git log`).
 - Timing: see Phase 04.4 commit timestamp.
+
+### Phase 05.1 — Complete (Phase 05 In Progress)
+
+- Baseline: `dotnet build` 0 warnings, `dotnet test` 100/100; portal `npm run build` OK, `npm run lint` 0/0.
+- Inventory (actual test code): TheoryData — transition matrix with all 9 rejected moves (incl. Completed →
+  Processing/Failed, Failed → Processing/Completed) + 3 allowed-transition facts, required values, replay payloads,
+  conflicting payloads, 500 cases; MemberData — 5 invalid HTTP bodies (each field missing/blank, 51-char
+  serviceCode) plus a padded-length fact; Moq — service, processor, Worker loop, 500 fault injection; Worker — 3/3/1/1
+  calls and recovery without re-claim. Gap found: no real concurrent test against the API + SQL Server (the race was
+  covered only by a deterministic unit test).
+- Added `Api/ConcurrentCreateTests` (real API pipeline + LocalDB, 5 POSTs released together):
+  same payload → all 201/200, exactly one 201, one id, one row; different payloads → exactly one 201, four 409, the
+  stored row is the winner's payload (whichever won). No 500 in either case.
+- Race evidence (5 runs): every run logged 8 Error-level entries per test (4 losers × EF `CommandError` +
+  `SaveChangesFailed`), with 4 replay logs (same payload) or 4 conflict logs (different payloads) — the real UNIQUE race
+  branch is exercised each time. Logging configuration not changed (OF-02 decision belongs to 05.2).
+- Quality (temporary mutations, restored with `git checkout`, rebuilt): UNIQUE removed from the migration → 2/2 fail;
+  duplicate-key translation disabled in the repository → 2/2 fail (500s leak).
+- Regression: `dotnet test` total 102, passed 102, failed 0, skipped 0 (TRX); portal `npm run build` OK; no test
+  databases left.
+- Phase 04 historical notes (visual review, keyboard pass, README frontend section) are closed by the 04.3/04.4
+  evidence; no current document claims them pending.
+- Open findings: OF-01 timestamp backfill (limitation), OF-02 EF Error log on handled race (now quantified; 05.2),
+  OF-03 unexpected Worker error waits for restart (accepted), OF-04 simulated provider state not durable (accepted).
+  Closed: StringLength (02.2), HTTP 500 regression (03.3).
+- Timing: see Phase 05.1 commit timestamp.
 
 ## Unfinished Work Template
 

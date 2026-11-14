@@ -113,11 +113,11 @@ cd frontend/service-requests-web && npm run build && npm run lint   # strict Typ
 | --- | --- | --- |
 | Unit (`Domain/`, `Application/`, `Worker/` processor, provider, loop) | nothing | transitions (Completed terminal, Failed final), invariants, timestamps, replay rule, idempotent create incl. simulated UNIQUE race, retry/exhaustion/permanent/unexpected/cancellation, claim before provider call, startup recovery |
 | Integration (`Persistence/`, `Worker/WorkerProcessingTests` processor cases) | LocalDB | migrations, UNIQUE and case-insensitive identity, timestamps, SQL filter and ordering, processing persisted to SQL Server |
-| Functional (`Api/`, `Worker/WorkerProcessingTests` host cases) | LocalDB | 201 / 200 / 409 / 400 / filter / 500 through the real pipeline; API POST → Worker host → GET observes Completed (with retries) or Failed |
+| Functional (`Api/`, `Worker/WorkerProcessingTests` host cases) | LocalDB | 201 / 200 / 409 / 400 / filter / 500 through the real pipeline; 5 concurrent POSTs for one reference (same payload → one row, one id; different payloads → one winner + 409s); API POST → Worker host → GET observes Completed (with retries) or Failed |
 
 Persistence, HTTP and Worker tests create throwaway databases `ServiceRequestsDb_Tests_<guid>` from the migrations and
 drop them afterwards. To use another SQL Server, set `SERVICEREQUESTS_TEST_SQLSERVER` to a connection string without a
-database name. Last validated run: 100 passed, 0 failed, 0 skipped.
+database name. Last validated run: 102 passed, 0 failed, 0 skipped.
 
 The portal has no automated UI test suite by design for this timed challenge (TD-12): it is validated by the strict
 production build, oxlint and real-browser acceptance against the real API, SQL Server and Worker (create, replay, 409,

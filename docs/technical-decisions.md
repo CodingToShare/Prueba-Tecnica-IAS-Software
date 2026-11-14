@@ -94,7 +94,7 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Trade-off:** Exception-driven path for the rare race.
 - **Risks:** Translation must not leak SQL details.
 - **Validation:** Phase 01.3 / 02.3 — duplicate (also case-variant) rejected with 2601/2627; repository maps it to
-  `TryAddAsync == false`; no SQL details reach clients. Known noise: EF logs the handled race at Error (Phase 05).
+  `TryAddAsync == false`; no SQL details reach clients. Known noise: EF logs the handled race at Error (Phase 05). Phase 05.1 — 5 concurrent POSTs through the real API on LocalDB: one row, one id, losers resolved as 200 or 409, no 500; each loser produced 2 EF Error logs.
 - **Future evolution:** filter or demote the EF error logs for the handled duplicate case.
 
 ### TD-07 — Separate Worker Service
