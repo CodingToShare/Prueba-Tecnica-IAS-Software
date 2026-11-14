@@ -57,6 +57,17 @@ function fieldErrorsFromProblem(problem: ProblemDetails | null): FieldErrors {
   return errors;
 }
 
+/**
+ * Moves keyboard/screen-reader focus to the first invalid field (form order), after the next render so the field
+ * already carries aria-invalid and its error text when it is announced.
+ */
+function focusFirstInvalid(errors: FieldErrors) {
+  const first = FIELDS.find((field) => errors[field.name]);
+  if (first) {
+    window.requestAnimationFrame(() => document.getElementById(first.name)?.focus());
+  }
+}
+
 interface CreateRequestFormProps {
   onRegistered: () => void;
 }
@@ -82,6 +93,7 @@ export function CreateRequestForm({ onRegistered }: CreateRequestFormProps) {
     setErrors(clientErrors);
     if (Object.keys(clientErrors).length > 0) {
       setFeedback({ tone: 'error', title: 'Revisa los campos marcados.', message: 'Hay datos faltantes o demasiado largos.' });
+      focusFirstInvalid(clientErrors);
       return;
     }
 
@@ -111,7 +123,9 @@ export function CreateRequestForm({ onRegistered }: CreateRequestFormProps) {
     } catch (error) {
       setFeedback(feedbackForError(error, values.externalReference.trim()));
       if (error instanceof ApiError && error.status === 400) {
-        setErrors(fieldErrorsFromProblem(error.problem));
+        const serverErrors = fieldErrorsFromProblem(error.problem);
+        setErrors(serverErrors);
+        focusFirstInvalid(serverErrors);
       }
     } finally {
       inFlight.current = false;

@@ -65,7 +65,11 @@ export function useRequestList(filter: StatusFilter): RequestList {
     };
   }, [filter, reloadToken]);
 
-  const refresh = useCallback(() => setReloadToken((token) => token + 1), []);
+  // A manual refresh/retry clears the failure so the user sees it working (skeleton when no rows are loaded yet).
+  const refresh = useCallback(() => {
+    setState((previous) => (previous.failedFilter === null ? previous : { ...previous, failedFilter: null }));
+    setReloadToken((token) => token + 1);
+  }, []);
   const requests = state.loadedFilter === filter ? state.requests : null;
   const failed = state.failedFilter === filter;
 

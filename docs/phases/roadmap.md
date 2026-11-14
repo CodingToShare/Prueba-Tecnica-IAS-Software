@@ -26,7 +26,7 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 03.4 | Documentation/evidence | 2 min | Complete |
 | 04 | React portal | 18 min | In Progress |
 | 04.1 | Development | 8 min | Complete |
-| 04.2 | UX / architecture / contract review | 3 min | Not Started |
+| 04.2 | UX / architecture / contract review | 3 min | Complete |
 | 04.3 | Build + functional + visual validation | 5 min | Not Started |
 | 04.4 | Documentation / evidence / AI | 2 min | Not Started |
 | 05 | Critical test hardening | 12 min | Not Started |
@@ -511,6 +511,30 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   `badge-completed` (CORS path works). Processes stopped, row deleted.
 - Not done here (by scope): visual review at 1440/768/390 px and keyboard pass (04.3); README frontend section (04.4).
 - Timing: see Phase 04.1 commit timestamp.
+
+### Phase 04.2 — Complete (review gate; Phase 04 In Progress)
+
+- Baseline: `npm run build` OK, `npm run lint` 0/0; `dotnet build` 0 warnings, `dotnet test` 100/100.
+- Reviewed actual code: POST body is the form state with exactly the 4 business fields; success branch tests
+  `status === 201` / `=== 200` explicitly (a replay is never shown as "created"; no `response.ok` shortcut); error
+  bodies parsed only when the content type is JSON, inside try/catch (non-JSON → no problem object; network → status 0);
+  server `title`/`detail` are never rendered; GET sends `status` via `URLSearchParams` with the enum literals
+  (`Pending|Processing|Completed|Failed`); polling: one request in flight, cleanup sets a cancelled flag + aborts +
+  clears the timer, so a response for a previous filter cannot overwrite the current one; form state is untouched by
+  polling; Enter submits (native form); Failed uses `critical` tokens, system errors `destructive`; breakpoints
+  980/720/640 px, no fixed widths except the 380 px form column (collapses below 980 px); dependencies: only react,
+  react-dom and scaffold dev tooling; no `.env`, secrets or connection strings.
+- Findings: no BLOCKER/HIGH/MEDIUM. LOW (fixed): L-01 focus did not move to the first invalid field after client or
+  400 validation → now focused after the next render (so `aria-invalid`/error text are present); L-02 list "Reintentar"
+  kept showing the error while retrying → manual refresh clears the failure (skeleton when no rows yet).
+- Notes: a malformed success body would surface as the generic connection error with "Reintentar" (re-submitting is
+  safe: the API answers 200 for the replay) · `role="status"` alerts are inserted on demand (announcement can vary by
+  screen reader; checked in 04.3) · very long codes keep `nowrap` in stacked rows and scroll inside the table wrapper ·
+  a newly created request is not visible when another status filter is active (filter respected) · README still says
+  the portal is pending (04.4) · open backend findings unchanged (timestamp backfill, EF race log → 05, unexpected
+  Worker error waits for restart, simulated provider state per process); StringLength and 500 remain closed.
+- Validation after corrections: `npm run build` OK, `npm run lint` 0/0; `dotnet build` 0 warnings; `dotnet test` 100/100.
+- Timing: see Phase 04.2 commit timestamp.
 
 ## Unfinished Work Template
 
