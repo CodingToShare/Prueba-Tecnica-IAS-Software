@@ -61,7 +61,8 @@ Dependencies: Api/Worker → Infrastructure → Core. Core stays free of EF Core
 ## Request Model
 
 `externalReference` (idempotency key, UNIQUE), `customerId`, `serviceCode`, `description`, `status`
-(+ technical fields such as id, timestamps, attempts/last error as needed by the Worker).
+(+ technical fields as needed). Implemented in 01.1: Guid v7 `Id`, nullable `FailureReason`; lengths
+100/50/50/1000/500; status stored as text. No timestamps yet (open finding for Phase 02/04).
 
 ## Idempotency Semantics
 
@@ -107,14 +108,16 @@ authentication, pagination, DELETE/generic update.
 ## Environment Findings (Phase 00)
 
 - Git 2.54, Node 24.21, npm 11.19 available.
-- **.NET SDK installed: 8.0.403 only (runtimes 6/7/8). The approved .NET 10 SDK is NOT installed.**
-  Phase 01 entry requires a user decision: install the .NET 10 SDK, or record a decision to target .NET 8 LTS (EF Core 8).
+- .NET SDK 10.0.404 installed by the user (OD-01 resolved); 8.0.403 also present. Work is CLI-driven
+  (Visual Studio 17.11 cannot open `net10.0` projects).
 - SQL Server LocalDB present (`MSSQLLocalDB`, automatic instance not yet created — first start creates it).
   Connection string must stay overridable via configuration/environment variables.
 
 ## Current Phase
 
-Phases 00 and 00.1 (governance, AI governance) complete; Phase 01 awaits authorization and OD-01.
+Phases 00 and 00.1 complete. Phase 01 In Progress: 01.1 (solution, domain, persistence) complete; 01.2 and 01.3
+await authorization. Database init (TD-16): `dotnet tool restore`, then
+`dotnet ef database update --project src/ServiceRequests.Infrastructure --startup-project src/ServiceRequests.Api`.
 See `docs/phases/roadmap.md` for status.
 
 ## Roadmap Summary (115 min planned, 120 min hard stop)

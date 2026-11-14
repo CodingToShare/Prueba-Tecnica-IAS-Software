@@ -16,8 +16,9 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Alternatives:** ASP.NET Framework 4.8 Web API; .NET 8 LTS.
 - **Decision:** .NET 10 with ASP.NET Core controllers and EF Core 10.
 - **Trade-off:** Not runnable in-process inside legacy .NET Framework hosts; integration is via HTTP/DB.
-- **Risks:** SDK not installed on the dev machine (see OD-01).
-- **Validation:** pending (Phase 01 build).
+- **Risks:** SDK initially missing on the dev machine (OD-01, resolved: user installed SDK 10.0.404). Visual Studio
+  17.11 cannot open `net10.0` projects; the challenge is driven from the .NET CLI.
+- **Validation:** Phase 01.1 — `dotnet build ServiceRequests.sln` with SDK 10.0.404, all projects `net10.0`, 0 warnings.
 - **Future evolution:** none needed for scope.
 
 ### TD-02 — React + TypeScript (Vite)
@@ -156,6 +157,24 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 ### TD-15 — Dependency versions pinned when introduced
 
 - **Decision:** packages are chosen and pinned in the phase that first needs them, never during Phase 00.
+- **Pinned so far (Phase 01.1):** `Microsoft.EntityFrameworkCore.SqlServer` 10.0.15 (Infrastructure),
+  `Microsoft.EntityFrameworkCore.Design` 10.0.15 (Api, private assets — design-time only), local tool `dotnet-ef`
+  10.0.15 (`dotnet-tools.json`); template defaults kept: `Microsoft.Extensions.Hosting` 10.0.15 (Worker), xUnit 2.9.3,
+  `xunit.runner.visualstudio` 3.1.4, `Microsoft.NET.Test.Sdk` 17.14.1, `coverlet.collector` 6.0.4 (Tests).
+
+### TD-16 — Explicit database initialization through EF Core migrations (resolves OD-03)
+
+- **Context:** Storage initialization must be reproducible; schema changes should be visible and deliberate.
+- **Alternatives:** automatic `Database.Migrate()` at API startup; `EnsureCreated()`.
+- **Decision:** committed EF Core migrations applied explicitly with the repository-local tool:
+  `dotnet tool restore` then
+  `dotnet ef database update --project src/ServiceRequests.Infrastructure --startup-project src/ServiceRequests.Api`.
+  The API and Worker never migrate the database on startup. Recorded 2026-11-14 (Phase 01.1).
+- **Trade-off:** one extra manual step for reviewers.
+- **Risks:** forgetting the step → API fails on first query; mitigated by README run order.
+- **Validation:** migration generated and discoverable (`dotnet ef migrations list` → `InitialCreate (Pending)`);
+  applying it to an empty database is pending (Phase 01.3).
+- **Future evolution:** idempotent SQL script (`dotnet ef migrations script --idempotent`) for deployed environments.
 
 ---
 
@@ -174,7 +193,7 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 
 | ID | Question | Owner phase | Status |
 | --- | --- | --- | --- |
-| OD-01 | .NET 10 SDK is not installed (only 8.0.403): install it, or record a fallback to .NET 8 LTS (EF Core 8)? | Before Phase 01 (user) | Open |
+| OD-01 | .NET 10 SDK is not installed (only 8.0.403): install it, or record a fallback to .NET 8 LTS (EF Core 8)? | Before Phase 01 (user) | Resolved 2026-11-14: user installed SDK 10.0.404; TD-01 unchanged |
 | OD-02 | Which fields define an "equivalent" replay (proposal: `customerId`, `serviceCode`, `description` after trimming)? | 02 | Open |
-| OD-03 | Database initialization: `dotnet ef database update` vs automatic migration at API startup in Development? | 01 | Open |
+| OD-03 | Database initialization: `dotnet ef database update` vs automatic migration at API startup in Development? | 01 | Resolved 2026-11-14 → TD-16 (explicit migrations) |
 | OD-04 | Persistence tests: SQLite in-memory (enforces UNIQUE) vs LocalDB? | 02 | Open |

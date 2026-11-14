@@ -13,7 +13,7 @@ Status: `Planned` → `In Progress` → `Verified` (or `Deferred` with reason).
 | R-01 | API registers a request | 02 | `POST /api/requests` | U, M | | Planned |
 | R-02 | API queries requests by status | 02 | `GET /api/requests?status=` | U, M | | Planned |
 | R-03 | Web UI creates a request and shows its status (React) | 04 | `frontend/service-requests-web` | M, R | | Planned |
-| R-04 | Real persistence + reproducible storage initialization | 01 | EF Core migrations, SQL Server | I/M | | Planned |
+| R-04 | Real persistence + reproducible storage initialization | 01 | EF Core migrations, SQL Server | I/M | 01.1: `InitialCreate` generated and listed by `dotnet ef migrations list` (Pending); apply on empty DB pending 01.3 | In Progress |
 | R-05 | Background process: Pending → simulated provider → status updated; Windows Service path clear | 03, 06 | `ServiceRequests.Worker` | U, M, D | | Planned |
 | R-06 | Automated tests on the most critical behavior | 01–05 | `tests/ServiceRequests.Tests` | U | | Planned |
 | R-07 | Brief log of decisions, assumptions, trade-offs, validations | 00, 06 | `technical-decisions.md`, README | D | | In Progress |
@@ -22,11 +22,11 @@ Status: `Planned` → `In Progress` → `Verified` (or `Deferred` with reason).
 
 | ID | Rule | Phase | Component | Levels | Evidence | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| BR-01 | Request has externalReference, customerId, serviceCode, description, status | 01, 02 | entity, DTOs, migration | U, R | | Planned |
-| BR-02 | States Pending, Processing, Completed, Failed | 01 | `RequestStatus` | U | | Planned |
-| BR-03 | Retry of the same operation never creates two provider effects | 02, 03 | UNIQUE index, idempotent create, idempotent provider | U, I | | Planned |
+| BR-01 | Request has externalReference, customerId, serviceCode, description, status | 01, 02 | entity, DTOs, migration | U, R | 01.1: entity, mapping and migration implemented; tests 01.3, DTOs 02 | In Progress |
+| BR-02 | States Pending, Processing, Completed, Failed | 01 | `ServiceRequestStatus` | U | 01.1: enum implemented; tests pending 01.3 | In Progress |
+| BR-03 | Retry of the same operation never creates two provider effects | 02, 03 | UNIQUE index, idempotent create, idempotent provider | U, I | 01.1: UNIQUE `UX_ServiceRequests_ExternalReference` in migration (not yet applied) | In Progress |
 | BR-04 | Simulated provider returns success or transient failure | 03 | simulated provider | U | | Planned |
-| BR-05 | A Completed request never returns to an earlier state | 01, 03 | entity transitions | U | | Planned |
+| BR-05 | A Completed request never returns to an earlier state | 01, 03 | entity transitions | U | 01.1: guarded transitions implemented; tests pending 01.3 | In Progress |
 | BR-06 | Screen shows externalReference, customerId, serviceCode, status and filters by status | 04 | table + segmented filter | M | | Planned |
 | BR-07 | Ambiguities documented as assumptions | 00, 06 | `technical-decisions.md` (A-xx, OD-xx) | D | | In Progress |
 
@@ -34,7 +34,7 @@ Status: `Planned` → `In Progress` → `Verified` (or `Deferred` with reason).
 
 | ID | Constraint | Phase | Levels | Evidence | Status |
 | --- | --- | --- | --- | --- | --- |
-| TC-01 | C# + ASP.NET Core Web API backend | 01 | R | | Planned |
+| TC-01 | C# + ASP.NET Core Web API backend | 01 | R | 01.1: `net10.0` Web API (controllers) project builds, 0 warnings | In Progress |
 | TC-02 | Exactly one frontend technology (React) | 04 | R | | Planned |
 | TC-03 | SQL implemented + 3–5 lines on the NoSQL alternative | 01, 06 | R, D | | Planned |
 | TC-04 | Inputs, errors, configuration and secrets handled safely | 02–04 | U, R | | Planned |
@@ -53,7 +53,7 @@ Status: `Planned` → `In Progress` → `Verified` (or `Deferred` with reason).
 
 | ID | Item | Phase | Levels | Evidence | Status |
 | --- | --- | --- | --- | --- | --- |
-| D-01 | Git history shows the evolution of the solution | all | R | Phase 00 commits `55e5402`, `7247b62` | In Progress |
+| D-01 | Git history shows the evolution of the solution | all | R | Local phase checkpoint commits (`git log`) | In Progress |
 | D-02 | Brief reproducible instructions: backend, frontend, storage, Worker | 06 | M, D | | Planned |
 | D-03 | Executable tests + note on covered scenarios | 05, 06 | U, D | | Planned |
 | D-04 | Decision log: context, alternatives, decision, trade-offs, risks, validation | 00, 06 | D | Format established in `technical-decisions.md` | In Progress |
