@@ -115,8 +115,10 @@ authentication, pagination, DELETE/generic update.
 
 ## Current Phase
 
-Phases 00 and 00.1 complete. Phase 01 In Progress: 01.1 (solution, domain, persistence) complete; 01.2 and 01.3
-await authorization. Database init (TD-16): `dotnet tool restore`, then
+Phases 00, 00.1 and 01 (01.1 build, 01.2 review, 01.3 validation) complete; Phase 02 awaits authorization.
+Tests: `dotnet test ServiceRequests.sln` (33; persistence tests use a throwaway LocalDB database, TD-17; override
+server with `SERVICEREQUESTS_TEST_SQLSERVER`). Database collation is case-insensitive (`SQL_Latin1_General_CP1_CI_AS`)
+— decide the externalReference comparison rule with OD-02. Database init (TD-16): `dotnet tool restore`, then
 `dotnet ef database update --project src/ServiceRequests.Infrastructure --startup-project src/ServiceRequests.Api`.
 See `docs/phases/roadmap.md` for status.
 

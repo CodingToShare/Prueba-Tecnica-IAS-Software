@@ -10,10 +10,10 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | --- | --- | --- | --- |
 | 00 | Agent governance and technical plan | 8 min | Complete |
 | 00.1 | AI governance and usage evidence | 5 min | Complete |
-| 01 | Solution foundation and persistence | 15 min | In Progress |
+| 01 | Solution foundation and persistence | 15 min | Complete |
 | 01.1 | Solution, domain and persistence development | 7 min | Complete |
 | 01.2 | Requirement, architecture and implementation review | 3 min | Complete |
-| 01.3 | Phase 01 tests and database validation | — | Not Started |
+| 01.3 | Unit, integration and functional validation | 5 min | Complete |
 | 02 | Idempotent API | 22 min | Not Started |
 | 03 | Background processing and resilience | 20 min | Not Started |
 | 04 | React portal | 18 min | Not Started |
@@ -77,7 +77,7 @@ Every item has a command or a place to look; record results in Phase 07 evidence
 | Since | Command |
 | --- | --- |
 | 00 | `git status`, `git diff --check` |
-| 01 | `dotnet tool restore`, `dotnet build ServiceRequests.sln`, `dotnet test` (no tests exist until 01.3) |
+| 01 | `dotnet tool restore`, `dotnet build ServiceRequests.sln`, `dotnet test ServiceRequests.sln` (persistence tests need LocalDB or `SERVICEREQUESTS_TEST_SQLSERVER`) |
 | 04 | `npm run build` (in `frontend/service-requests-web`) |
 
 ## Phase Evidence
@@ -187,6 +187,38 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   - Api template `https` launch profile kept without HTTPS redirection · none for local dev · harmless · revisit with
     CORS/dev origin in Phase 02.
 - Timing: see Phase 01.2 commit timestamp.
+
+### Phase 01.3 — Complete → Phase 01 Complete
+
+- Baseline: `dotnet restore` OK; `dotnet build ServiceRequests.sln --no-restore` → 0 warnings, 0 errors.
+- Tests added (`tests/ServiceRequests.Tests`):
+  - Unit `Domain/ServiceRequestTests` (27): starts Pending with trimmed values; null/empty/whitespace rejected per
+    parameter (`MemberData`); the 3 allowed transitions; all 9 disallowed transitions throw and keep status/reason
+    (`TheoryData`; Completed terminal, Failed final per A-03); blank failure reason rejected; reason truncated to 500;
+    no public setters.
+  - Integration `Persistence/ServiceRequestPersistenceTests` (4, real LocalDB): all migrations applied on a clean
+    database; `sys.indexes` shows UNIQUE on ExternalReference and non-unique on Status; duplicate ExternalReference
+    from a distinct entity rejected with `SqlException` 2601/2627 and only one row stored; Failed status stored as
+    text `Failed` with its reason.
+  - Functional `Persistence/ServiceRequestRoundTripTests` (2): domain entity → EF Core → LocalDB → fresh context
+    keeps business data and Pending; status query returns only Pending rows of its batch.
+  - `LocalDbFixture`: unique database `ServiceRequestsDb_Tests_<guid>` built with `MigrateAsync`, dropped on dispose;
+    server overridable via `SERVICEREQUESTS_TEST_SQLSERVER`.
+- Regression: `dotnet build ServiceRequests.sln` → 0 warnings, 0 errors; `dotnet test ServiceRequests.sln --no-build`
+  → 33 passed, 0 failed, 0 skipped (TRX counters).
+- Test quality (temporary mutations, reverted with `git checkout`): `unique: false` in the migration → 2/2 index
+  tests fail; transition guard disabled → 9/9 invalid-transition tests fail.
+- Database cleanup: after the run `sys.databases` lists no `ServiceRequestsDb_Tests_*` database.
+- Migration smoke (TD-16 path): `dotnet tool restore`; `dotnet ef database update --project
+  src/ServiceRequests.Infrastructure --startup-project src/ServiceRequests.Api` → Done; `dotnet ef migrations list` →
+  `20261114150901_InitialCreate` applied; `sqlcmd` on `ServiceRequestsDb`: `PK_ServiceRequests`,
+  `UX_ServiceRequests_ExternalReference` (unique), `IX_ServiceRequests_Status`; `__EFMigrationsHistory` has InitialCreate.
+- Collation confirmed `SQL_Latin1_General_CP1_CI_AS` (case-insensitive): `REQ-1` and `req-1` collide on the UNIQUE
+  index → comparison rule to be recorded with OD-02 in Phase 02 (01.2 deferred finding).
+- Phase 01 acceptance: .NET 10 build, framework-free Core (01.2), protected state, Completed terminal, Failed final,
+  SQL Server persistence, migration on empty database, UNIQUE enforced by SQL Server, Status indexed, round trip,
+  tests green, no Phase 02 code (no endpoints/Worker processing) — all met.
+- Timing: see Phase 01.3 commit timestamp.
 
 ## Unfinished Work Template
 

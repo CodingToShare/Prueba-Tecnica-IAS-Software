@@ -13,20 +13,20 @@ Status: `Planned` → `In Progress` → `Verified` (or `Deferred` with reason).
 | R-01 | API registers a request | 02 | `POST /api/requests` | U, M | | Planned |
 | R-02 | API queries requests by status | 02 | `GET /api/requests?status=` | U, M | | Planned |
 | R-03 | Web UI creates a request and shows its status (React) | 04 | `frontend/service-requests-web` | M, R | | Planned |
-| R-04 | Real persistence + reproducible storage initialization | 01 | EF Core migrations, SQL Server | I/M | 01.1: `InitialCreate` generated and listed by `dotnet ef migrations list` (Pending); 01.2: migration matches model (`has-pending-model-changes` → none); apply on empty DB pending 01.3 | In Progress |
+| R-04 | Real persistence + reproducible storage initialization | 01 | EF Core migrations, SQL Server | I/M | 01.3: `dotnet ef database update` applied `InitialCreate` to LocalDB `ServiceRequestsDb` (indexes checked with `sqlcmd`); LocalDB tests migrate a clean DB and round-trip data through a fresh context | Verified |
 | R-05 | Background process: Pending → simulated provider → status updated; Windows Service path clear | 03, 06 | `ServiceRequests.Worker` | U, M, D | | Planned |
-| R-06 | Automated tests on the most critical behavior | 01–05 | `tests/ServiceRequests.Tests` | U | | Planned |
+| R-06 | Automated tests on the most critical behavior | 01–05 | `tests/ServiceRequests.Tests` | U | 01.3: 33 tests pass (state transitions, invariants, UNIQUE, persistence); retry/idempotency pending 02–03 | In Progress |
 | R-07 | Brief log of decisions, assumptions, trade-offs, validations | 00, 06 | `technical-decisions.md`, README | D | | In Progress |
 
 ## Functional Rules (challenge §3)
 
 | ID | Rule | Phase | Component | Levels | Evidence | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| BR-01 | Request has externalReference, customerId, serviceCode, description, status | 01, 02 | entity, DTOs, migration | U, R | 01.1: entity, mapping and migration implemented; tests 01.3, DTOs 02 | In Progress |
-| BR-02 | States Pending, Processing, Completed, Failed | 01 | `ServiceRequestStatus` | U | 01.1: enum implemented; tests pending 01.3 | In Progress |
-| BR-03 | Retry of the same operation never creates two provider effects | 02, 03 | UNIQUE index, idempotent create, idempotent provider | U, I | 01.1: UNIQUE `UX_ServiceRequests_ExternalReference` in migration (not yet applied) | In Progress |
+| BR-01 | Request has externalReference, customerId, serviceCode, description, status | 01, 02 | entity, DTOs, migration | U, R | 01.3: entity + schema verified by unit and LocalDB round-trip tests; DTOs pending 02 | In Progress |
+| BR-02 | States Pending, Processing, Completed, Failed | 01 | `ServiceRequestStatus` | U | 01.3: `ServiceRequestTests` transition matrix; statuses persisted as text | Verified |
+| BR-03 | Retry of the same operation never creates two provider effects | 02, 03 | UNIQUE index, idempotent create, idempotent provider | U, I | 01.3: SQL Server rejects a duplicate ExternalReference (2601/2627, one row stored); API and provider idempotency pending 02–03 | In Progress |
 | BR-04 | Simulated provider returns success or transient failure | 03 | simulated provider | U | | Planned |
-| BR-05 | A Completed request never returns to an earlier state | 01, 03 | entity transitions | U | 01.1: guarded transitions implemented; tests pending 01.3 | In Progress |
+| BR-05 | A Completed request never returns to an earlier state | 01, 03 | entity transitions | U | 01.3: entity rule verified (any transition from Completed throws, status kept); Worker use pending 03 | In Progress |
 | BR-06 | Screen shows externalReference, customerId, serviceCode, status and filters by status | 04 | table + segmented filter | M | | Planned |
 | BR-07 | Ambiguities documented as assumptions | 00, 06 | `technical-decisions.md` (A-xx, OD-xx) | D | | In Progress |
 
@@ -34,7 +34,7 @@ Status: `Planned` → `In Progress` → `Verified` (or `Deferred` with reason).
 
 | ID | Constraint | Phase | Levels | Evidence | Status |
 | --- | --- | --- | --- | --- | --- |
-| TC-01 | C# + ASP.NET Core Web API backend | 01 | R | 01.1: `net10.0` Web API (controllers) project builds, 0 warnings | In Progress |
+| TC-01 | C# + ASP.NET Core Web API backend | 01 | R | 01.1–01.3: `net10.0` ASP.NET Core Web API (controllers) builds with SDK 10.0.404, 0 warnings | Verified |
 | TC-02 | Exactly one frontend technology (React) | 04 | R | | Planned |
 | TC-03 | SQL implemented + 3–5 lines on the NoSQL alternative | 01, 06 | R, D | | Planned |
 | TC-04 | Inputs, errors, configuration and secrets handled safely | 02–04 | U, R | | Planned |

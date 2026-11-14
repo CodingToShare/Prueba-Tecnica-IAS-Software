@@ -172,8 +172,8 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
   The API and Worker never migrate the database on startup. Recorded 2026-11-14 (Phase 01.1).
 - **Trade-off:** one extra manual step for reviewers.
 - **Risks:** forgetting the step → API fails on first query; mitigated by README run order.
-- **Validation:** migration generated and discoverable (`dotnet ef migrations list` → `InitialCreate (Pending)`);
-  applying it to an empty database is pending (Phase 01.3).
+- **Validation:** Phase 01.3 — `dotnet ef database update` created `ServiceRequestsDb` on LocalDB and applied
+  `InitialCreate`; indexes confirmed with `sqlcmd`; the test fixture also migrates a clean database on every run.
 - **Future evolution:** idempotent SQL script (`dotnet ef migrations script --idempotent`) for deployed environments.
 
 ### TD-17 — Persistence integration tests against SQL Server LocalDB (resolves OD-04)
@@ -186,7 +186,8 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Trade-off:** those tests need Windows + LocalDB; a reviewer without it can point the tests to another SQL Server
   via configuration (to be documented in Phase 01.3/06).
 - **Risks:** slower tests; leftover test databases → fixture drops its database.
-- **Validation:** pending — Phase 01.3 provides the test evidence.
+- **Validation:** Phase 01.3 — 6 LocalDB tests pass (migration, indexes, UNIQUE rejection 2601/2627, mapping, round
+  trip, status query); unique per-run database dropped afterwards; override variable `SERVICEREQUESTS_TEST_SQLSERVER`.
 
 ---
 
@@ -208,4 +209,4 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 | OD-01 | .NET 10 SDK is not installed (only 8.0.403): install it, or record a fallback to .NET 8 LTS (EF Core 8)? | Before Phase 01 (user) | Resolved 2026-11-14: user installed SDK 10.0.404; TD-01 unchanged |
 | OD-02 | Which fields define an "equivalent" replay (proposal: `customerId`, `serviceCode`, `description` after trimming)? | 02 | Open |
 | OD-03 | Database initialization: `dotnet ef database update` vs automatic migration at API startup in Development? | 01 | Resolved 2026-11-14 → TD-16 (explicit migrations) |
-| OD-04 | Persistence tests: SQLite in-memory (enforces UNIQUE) vs LocalDB? | 02 | Resolved 2026-11-14 → TD-17 (LocalDB); test evidence pending 01.3 |
+| OD-04 | Persistence tests: SQLite in-memory (enforces UNIQUE) vs LocalDB? | 02 | Resolved 2026-11-14 → TD-17 (LocalDB); evidenced in 01.3 |
