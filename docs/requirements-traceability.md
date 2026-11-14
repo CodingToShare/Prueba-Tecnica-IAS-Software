@@ -58,4 +58,4 @@ Status: `Planned` → `In Progress` → `Verified` (or `Deferred` with reason).
 | D-03 | Executable tests + note on covered scenarios | 05, 06 | U, D | | Planned |
 | D-04 | Decision log: context, alternatives, decision, trade-offs, risks, validation | 00, 06 | D | Format established in `technical-decisions.md` | In Progress |
 | D-05 | Business/technical assumptions | 00, 06 | D | A-01…A-06 registered | In Progress |
-| D-06 | AI usage note (what for, how verified, what corrected/rejected) | 06 | D | | Planned |
+| D-06 | AI usage note (what for, how verified, what corrected/rejected) | 06 | D | `docs/ai/ai-usage.md` — incremental evidence; final README disclosure pending Phase 06 | Planned |

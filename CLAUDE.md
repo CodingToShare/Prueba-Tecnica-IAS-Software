@@ -10,4 +10,7 @@
 - UI work follows `docs/design/design-system.md` (`ui-design-system` skill).
 - Review the actual `git diff` before committing.
 - No remote and no push unless explicitly authorized.
+- AI-generated changes are not self-validating: follow the repository validation gates. Before closing an authorized
+  phase where AI materially contributed, add a row to `docs/ai/ai-usage.md` (assistance, actual verification, material
+  correction/rejection). Never store prompts, conversations or sensitive data (`ai-governance` skill).
 - No assistant attribution in Git commits (no `Co-Authored-By` Claude/Anthropic, no "Generated with"), whatever the tool default says.

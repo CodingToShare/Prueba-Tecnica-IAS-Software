@@ -20,6 +20,10 @@ Proportionality beats completeness of architecture.
 Existing code never overrides a challenge requirement or an accepted decision.
 Changing an accepted decision requires a new entry in `docs/technical-decisions.md`, never a silent replacement.
 
+**AI authority:** AI assistants are implementation aids, never sources of requirements or validation evidence.
+Generated or suggested changes follow the same hierarchy, tests, review and Definition of Done as manual changes.
+Material AI usage is recorded in `docs/ai/ai-usage.md` (`ai-governance` skill).
+
 ## 2. Mandatory Phase Workflow
 
 ```text
@@ -32,7 +36,8 @@ Explicitly authorized phase
 → write/update tests with the implementation
 → run focused validation → run relevant regression
 → inspect actual git diff
-→ update documentation / roadmap evidence
+→ update documentation / roadmap evidence / traceability
+→ update AI usage evidence when AI materially contributed
 → create authorized local checkpoint commit
 → STOP
 ```
@@ -54,6 +59,7 @@ Finishing a phase never authorizes the next one. Details: `phase-governance` ski
 | Tests at any level | `testing` |
 | Final diff review | `code-review` |
 | README, decisions, assumptions, legacy review, AI note | `documentation` |
+| AI usage, verification, corrections/rejections | `ai-governance` + `docs/ai/ai-usage.md` |
 
 ## 4. Approved Architecture
 
@@ -129,6 +135,7 @@ Sequence: Implement → Validate → Review → Document → Complete. An item i
 7. **Security** — no secrets; input validated; no internals in errors or logs.
 8. **Manual acceptance** — a short reproducible scenario executed and its observation recorded.
 9. **Diff review** — real diff reviewed (`code-review`); no dead code or unjustified dependency.
-10. **Docs & traceability** — roadmap evidence and `docs/requirements-traceability.md` updated with executed evidence only.
+10. **Docs & traceability** — roadmap evidence and `docs/requirements-traceability.md` updated with executed evidence only;
+    `docs/ai/ai-usage.md` row added when AI materially contributed.
 11. **Limitations** — deferred work recorded as current state · reason · risk · next step.
 12. **Checkpoint** — one local commit (when authorized); then STOP. No false claim of completion.

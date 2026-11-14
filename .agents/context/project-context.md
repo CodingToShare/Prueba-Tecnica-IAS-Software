@@ -35,6 +35,12 @@ screen, request lifecycle, processing with retries, alerts and states; sample da
 shadows, navy gradient only on the brand bar. Status tones: Pending → neutral, Processing → informational,
 Completed → normal, Failed → critical; badges carry color + text + shape. Validated at ~1440/768/390 px.
 
+## AI Assistance
+
+Permitted and disclosed. Claude Code is the repository-aware implementation agent. AI does not override requirements
+or accepted decisions and does not count as verification. Incremental evidence lives in `docs/ai/ai-usage.md`; the
+final challenge disclosure is produced from it in Phase 06.
+
 ## Repository Target
 
 ```text
@@ -46,6 +52,7 @@ docs/design/design-system.md     visual contract
 docs/design/reference/           canonical visual reference (HTML)
 docs/technical-decisions.md      decisions, assumptions, open decisions
 docs/requirements-traceability.md  challenge requirement → phase → evidence
+docs/ai/ai-usage.md              incremental AI usage evidence (tracked)
 docs/phases/roadmap.md           phases, status, evidence
 ```
 
@@ -107,9 +114,10 @@ authentication, pagination, DELETE/generic update.
 
 ## Current Phase
 
-Phase 00 — Agent governance and technical plan. See `docs/phases/roadmap.md` for status.
+Phases 00 and 00.1 (governance, AI governance) complete; Phase 01 awaits authorization and OD-01.
+See `docs/phases/roadmap.md` for status.
 
-## Roadmap Summary (110 min target, 120 min hard stop)
+## Roadmap Summary (115 min planned, 120 min hard stop)
 
-00 Governance 8 · 01 Foundation + persistence 15 · 02 Idempotent API 22 · 03 Worker + resilience 20 ·
-04 React portal 18 · 05 Test hardening 12 · 06 Docs + legacy review 10 · 07 Final validation 5 · Reserve 10.
+00 Governance 8 · 00.1 AI governance 5 · 01 Foundation + persistence 15 · 02 Idempotent API 22 · 03 Worker + resilience 20 ·
+04 React portal 18 · 05 Test hardening 12 · 06 Docs + legacy review 10 · 07 Final validation 5 · Reserve 5.

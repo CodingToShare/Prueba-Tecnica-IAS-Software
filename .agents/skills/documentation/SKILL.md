@@ -23,6 +23,8 @@ Updating `README.md`, `docs/technical-decisions.md`, the roadmap evidence, or wr
     Completed can regress → enforce transition rule; entity returned directly → return a DTO; consider anti-forgery token.
   - Minimal safe changes only, no rewrites.
 - **AI note**: what AI was used for, how output was verified, what was corrected or rejected. No sensitive data.
+  `docs/ai/ai-usage.md` = incremental factual evidence (per phase, `ai-governance`); README AI section = concise final
+  disclosure summarized from that log in Phase 06 — never reconstructed from memory.
 - **Deferred work**: current state · reason · risk · next concrete step.
 
 **README outline:** what it is (1 paragraph) · architecture at a glance (diagram) · prerequisites · run
@@ -48,5 +50,5 @@ Claiming unimplemented features, ADR directory trees, marketing language, duplic
 - [ ] Every run instruction executed at least once
 - [ ] Assumptions and trade-offs listed
 - [ ] Legacy review covers both snippets
-- [ ] AI usage disclosed
+- [ ] AI usage disclosed (README note derived from `docs/ai/ai-usage.md`)
 - [ ] Deferred work explicit

@@ -1,6 +1,7 @@
 # Roadmap — Time-Boxed Implementation Plan
 
-Target implementation window: **110 min** · Contingency reserve: **10 min** · Hard stop: **120 min**.
+Planned work: **115 min** · Contingency reserve: **5 min** · Hard stop: **120 min**
+(rebalanced when Phase 00.1 was added; reserve was 10 min).
 Real timing evidence comes from Git commit history; elapsed times are never fabricated.
 
 Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred`.
@@ -8,6 +9,7 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | Phase | Scope | Target | Status |
 | --- | --- | --- | --- |
 | 00 | Agent governance and technical plan | 8 min | Complete |
+| 00.1 | AI governance and usage evidence | 5 min | Complete |
 | 01 | Solution foundation and persistence | 15 min | Not Started |
 | 02 | Idempotent API | 22 min | Not Started |
 | 03 | Background processing and resilience | 20 min | Not Started |
@@ -15,13 +17,17 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 05 | Critical test hardening | 12 min | Not Started |
 | 06 | Documentation and legacy review | 10 min | Not Started |
 | 07 | Final validation and delivery | 5 min | Not Started |
-| — | Contingency reserve | 10 min | — |
+| — | Contingency reserve | 5 min | — |
 
 ## Phase Scopes
 
 **00 — Governance.** AGENTS.md, CLAUDE.md, project context, 10 skills (incl. `ui-design-system`), design contract +
 reference HTML, roadmap, technical decisions (+ assumptions, open decisions), requirements traceability, .gitignore.
 No product code.
+
+**00.1 — AI governance.** Tracked AI usage log (`docs/ai/ai-usage.md`), `ai-governance` skill, minimal routing updates
+(AGENTS.md, CLAUDE.md, project context, phase-governance, documentation, code-review), verification and
+correction/rejection evidence policy. No product code.
 
 **01 — Foundation + persistence.** Solution + 4 src projects + test project; project references; `ServiceRequest` entity
 with guarded transitions (+ transition tests); DbContext, mapping, UNIQUE `ExternalReference`, `Status` index; initial
@@ -105,6 +111,18 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   queue and sidebar removed; "Cambios respecto a la v3 original" section added. Validation: headless Edge renders at
   1440/768/390 px reviewed (fixed: codes wrapping at hyphens, stacked reference cell); tag balance, unique ids and
   CSS variables checked by script. Contract, skill, AGENTS.md, project context and TD-13 updated accordingly.
+
+### Phase 00.1 — Complete
+
+- Scope: created `docs/ai/ai-usage.md` (policy + usage log, rows for 00 and 00.1 based on existing roadmap evidence)
+  and `.agents/skills/ai-governance/SKILL.md`; minimal updates to AGENTS.md (AI authority rule, routing, workflow,
+  DoD §8.10), CLAUDE.md, project context, phase-governance, documentation and code-review skills; D-06 evidence pointer
+  (status stays Planned until Phase 06); timebox rebalanced (115 planned + 5 reserve).
+- Validation: `git diff --check` clean; `git check-ignore -v docs/ai/ai-usage.md` → no rule (tracked); new files
+  scanned for secrets/paths (only false positives: design "tokens", policy wording); staged diff reviewed.
+- Not touched: the pre-existing user modification of `docs/design/reference/design-system-v3.html` (unstaged).
+- No product code, packages or assistant-specific config added. OD-01 still open; Phase 01 Not Started.
+- Timing: see Phase 00.1 commit timestamp.
 
 ## Unfinished Work Template
 

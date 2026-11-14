@@ -37,6 +37,8 @@ Only the explicitly authorized phase runs, on a verified baseline, inside its sc
 - Update roadmap status + evidence (commands run, results) and the matching rows of
   `docs/requirements-traceability.md`. Resolve the phase's open decisions (OD-xx) with date and rationale.
   Never fabricate elapsed times.
+- If AI materially contributed, add one row to `docs/ai/ai-usage.md` (assistance · actual verification ·
+  correction/rejection or `None material`) — `ai-governance` skill.
 - Apply the Definition of Done in AGENTS.md §8 (N/A only with a reason).
 - Commit (when authorized): Conventional Commit subject, blank line, body starting `Phase NN:`.
   `git status` → `git diff --check` → `git diff` → commit → `git log -1 --format=%B`.
@@ -54,5 +56,6 @@ skipping baseline; pulling later scope forward; backdating commits; hiding faili
 - [ ] Scope implemented with tests
 - [ ] Exit checks run and recorded
 - [ ] Roadmap updated with evidence
+- [ ] AI usage row added (if AI materially contributed)
 - [ ] Local checkpoint commit verified
 - [ ] Stopped; next phase awaits authorization

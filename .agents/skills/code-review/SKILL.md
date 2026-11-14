@@ -26,6 +26,9 @@ Review `git diff` (staged + unstaged) against the challenge and accepted decisio
   focus visible, responsive)
 - Logs: useful context, no secrets or payloads
 - Docs and roadmap evidence reflect only what was actually run
+- AI evidence: `docs/ai/ai-usage.md` row matches what changed; its verification claims match checks actually
+  executed; no raw conversation or sensitive data committed; no assistant attribution in product docs or commits.
+  AI-assisted code is held to exactly the same standard as any other code.
 
 ## Required Rules
 
