@@ -22,7 +22,7 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 03 | Background processing and resilience | 20 min | In Progress |
 | 03.1 | Development | 9 min | Complete |
 | 03.2 | Technical/resilience review | 3 min | Complete |
-| 03.3 | Automated + functional validation | 6 min | Not Started |
+| 03.3 | Automated + functional validation | 6 min | Complete |
 | 03.4 | Documentation/evidence | 2 min | Not Started |
 | 04 | React portal | 18 min | Not Started |
 | 05 | Critical test hardening | 12 min | Not Started |
@@ -411,6 +411,42 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   non-blocking, 500 regression still pending 03.3, EF command logs stay at Warning.
 - Validation: focused Worker tests 17/17; full `dotnet build` 0 warnings, `dotnet test` 88/88, 0 skipped.
 - Timing: see Phase 03.2 commit timestamp.
+
+### Phase 03.3 — Complete (Phase 03 In Progress)
+
+- Baseline: build 0 warnings; tests 88/88.
+- Production change for testability only: Worker registrations moved from `Program.cs` into
+  `AddRequestProcessing(IServiceCollection, IConfiguration)`; `Program` calls it (same behavior), so tests use the
+  production composition.
+- Unit (65): processor — transient, transient, success → exactly 3 calls, Completed, `CreatedAt` unchanged,
+  `UpdatedAt` advanced, persisted [Processing, Completed]; always transient → 3 calls, Failed "after 3 attempts";
+  permanent → 1 call, Failed; unexpected → 1 call, propagates, stays Processing; cancellation during the provider
+  call → 1 call, not Failed; claim save fails → provider never called; claim persisted before the provider call
+  (asserted inside the provider call); resume → no re-claim, Completed; simulated provider (6) and Worker loop (2).
+- SQL Server integration (15 = 12 Phase 01–02 + 3): processor with the real repository on a separate per-run
+  LocalDB database (`WorkerDb` collection): Pending → Completed (`CreatedAt` unchanged, `UpdatedAt` later, fresh
+  context); exhausted transient failures → Failed with reason, no provider effect; Processing row resumed → Completed.
+- Functional (20 = 14 API + 4 HTTP 500 + 2 Worker): POST via `WebApplicationFactory` → Pending → real
+  `RequestProcessingWorker` started from the production composition (`TransientFailuresBeforeSuccess` 2) → GET
+  `?status=Completed` observes it, two transient-failure warnings logged, "after 3 attempt(s)", provider effect count 1,
+  `StopAsync` completes (graceful stop); `UNSUPPORTED` → GET observes Failed with reason.
+- **Phase 02 finding "500 not covered by an automated test": Closed in Phase 03.3 regression validation** —
+  `Api/UnhandledErrorTests` replaces the repository via `ConfigureTestServices` with one that throws an exception
+  whose message contains a fake connection string and SQL; GET and POST in Testing and Development → 500
+  `application/problem+json` without the host, password, SQL, exception type or stack frames.
+- Phase 02 finding "StringLength before trim": already fixed in 02.2 (`47b8067`, DTO trims in `init` before
+  validation); 03.3 adds `Post_PaddedValueThatFitsAfterTrim_IsAcceptedAndStoredTrimmed` (padded 100 chars → 201
+  stored trimmed; 101 → 400). Phase 02 finding "AddRequestTimestamps backfill": unchanged documented limitation;
+  the empty-database migration path still passes (fixtures migrate a new database each run).
+- Quality (temporary mutations, restored with `git checkout`): retry every exception → 3 processor tests fail; one
+  extra retry → 2 fail; Completed instead of Failed on exhaustion → 2/2 fail; final save removed → 5/5 Worker
+  integration/functional tests fail; provider called before the claim → 2/2 fail; `UseExceptionHandler` removed → 4/4
+  500 tests fail. (A run with `--no-build` right after the last mutation used stale binaries and showed 4 failures;
+  rebuilding gave 100/100.)
+- Regression: `dotnet build ServiceRequests.sln` → 0 warnings, 0 errors; `dotnet test ServiceRequests.sln --no-build`
+  → total 100, passed 100, failed 0, skipped 0 (TRX). No `ServiceRequestsDb_Tests_*` databases left.
+- Worker smoke: `dotnet run --project src/ServiceRequests.Worker` → "Application started", Development; stopped.
+- Timing: see Phase 03.3 commit timestamp.
 
 ## Unfinished Work Template
 

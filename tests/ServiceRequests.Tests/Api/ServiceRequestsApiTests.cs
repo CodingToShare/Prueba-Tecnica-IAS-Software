@@ -1,8 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using ServiceRequests.Core;
 using ServiceRequests.Tests.Persistence;
@@ -156,6 +154,20 @@ public sealed class ServiceRequestsApiTests : IDisposable
         Assert.Contains(processing!, r => r.ExternalReference == processingReference);
     }
 
+    [Fact]
+    public async Task Post_PaddedValueThatFitsAfterTrim_IsAcceptedAndStoredTrimmed()
+    {
+        // Regression for the Phase 02.2 fix: length limits apply to the trimmed value.
+        var reference = NewReference().PadRight(ServiceRequest.ExternalReferenceMaxLength, 'X');
+
+        var accepted = await PostAsync($"   {reference}   ", "CUST-01", "INST", "Install service");
+        var tooLong = await PostAsync(reference + "Y", "CUST-01", "INST", "Install service");
+
+        Assert.Equal(HttpStatusCode.Created, accepted.StatusCode);
+        Assert.Equal(reference, (await ReadAsync<RequestBody>(accepted)).ExternalReference);
+        Assert.Equal(HttpStatusCode.BadRequest, tooLong.StatusCode);
+    }
+
     [Theory]
     [InlineData("Banana")]
     [InlineData("1")]
@@ -194,13 +206,4 @@ public sealed class ServiceRequestsApiTests : IDisposable
         DateTimeOffset UpdatedAt);
 
     private sealed record ProblemBody(int Status, string? Title, Dictionary<string, string[]>? Errors);
-
-    private sealed class ApiFactory(string connectionString) : WebApplicationFactory<Program>
-    {
-        protected override void ConfigureWebHost(IWebHostBuilder builder)
-        {
-            builder.UseEnvironment("Testing");
-            builder.UseSetting("ConnectionStrings:ServiceRequests", connectionString);
-        }
-    }
 }

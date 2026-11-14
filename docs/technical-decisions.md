@@ -270,7 +270,8 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Risks:** repeated unexpected errors could keep requests in Processing; visible through logs and the status filter.
 - **Validation:** Phase 03.1 — 15 focused tests; manual end-to-end and startup-recovery runs. Phase 03.2 — Worker
   tests: recovery retried after list failures and completed before Pending polling; one failing orphan does not
-  block the others.
+  block the others. Phase 03.3 — LocalDB processor tests and API → Worker host → GET functional tests through the
+  production composition (`AddRequestProcessing`); cancellation and failed-claim cases; six mutations detected.
 - **Future evolution:** periodic recovery of stale Processing rows using `UpdatedAt` as a lease.
 
 ---

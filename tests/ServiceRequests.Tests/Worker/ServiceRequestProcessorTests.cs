@@ -71,6 +71,38 @@ public class ServiceRequestProcessorTests
 
         _provider.Verify(p => p.ProcessAsync(request, It.IsAny<CancellationToken>()), Times.Exactly(3));
         Assert.Equal(ServiceRequestStatus.Completed, request.Status);
+        Assert.Equal(Now.AddMinutes(-1), request.CreatedAt);
+        Assert.Equal(Now, request.UpdatedAt);
+        Assert.Equal([ServiceRequestStatus.Processing, ServiceRequestStatus.Completed], _persistedStatuses);
+    }
+
+    [Fact]
+    public async Task ClaimCannotBePersisted_ProviderIsNeverCalled()
+    {
+        var request = PendingRequest();
+        _repository.Setup(r => r.FindNextPendingAsync(It.IsAny<CancellationToken>())).ReturnsAsync(request);
+        _repository.Setup(r => r.UpdateAsync(request, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("database unavailable"));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _processor.ProcessNextPendingAsync(CancellationToken.None));
+
+        _provider.Verify(p => p.ProcessAsync(It.IsAny<ServiceRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CancellationDuringProviderCall_IsNotRetriedAndDoesNotFailTheRequest()
+    {
+        var request = PendingRequest();
+        _repository.Setup(r => r.FindNextPendingAsync(It.IsAny<CancellationToken>())).ReturnsAsync(request);
+        _provider.Setup(p => p.ProcessAsync(request, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OperationCanceledException());
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => _processor.ProcessNextPendingAsync(CancellationToken.None));
+
+        _provider.Verify(p => p.ProcessAsync(request, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal(ServiceRequestStatus.Processing, request.Status);
+        Assert.Equal([ServiceRequestStatus.Processing], _persistedStatuses);
     }
 
     [Fact]

@@ -122,10 +122,10 @@ authentication, pagination, DELETE/generic update.
 
 ## Current Phase
 
-Phases 00, 00.1, 01 and 02 complete. Phase 03 In Progress: 03.1 development and 03.2 review complete; 03.3 tests and
-03.4 docs each await authorization. Execution guide: `README.md`. API: `POST /api/requests`, `GET /api/requests[?status=]`; CORS origin from
+Phases 00, 00.1, 01 and 02 complete. Phase 03 In Progress: 03.1 development, 03.2 review and 03.3 tests complete;
+03.4 docs awaits authorization. Execution guide: `README.md`. API: `POST /api/requests`, `GET /api/requests[?status=]`; CORS origin from
 `Cors:AllowedOrigins` (default `http://localhost:5173`).
-Tests: `dotnet test ServiceRequests.sln` (88: unit incl. Worker loop/processor/provider, LocalDB integration, HTTP via WebApplicationFactory; persistence tests use a throwaway LocalDB database, TD-17; override
+Tests: `dotnet test ServiceRequests.sln` (100: unit incl. Worker, LocalDB integration incl. Worker processing, functional API + Worker host + 500; LocalDB integration, HTTP via WebApplicationFactory; persistence tests use a throwaway LocalDB database, TD-17; override
 server with `SERVICEREQUESTS_TEST_SQLSERVER`). Database init (TD-16): `dotnet tool restore`, then
 `dotnet ef database update --project src/ServiceRequests.Infrastructure --startup-project src/ServiceRequests.Api`.
 See `docs/phases/roadmap.md` for status.
