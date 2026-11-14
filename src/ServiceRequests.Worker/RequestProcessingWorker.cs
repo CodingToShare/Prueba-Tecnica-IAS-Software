@@ -18,9 +18,15 @@ public sealed class RequestProcessingWorker(
     {
         try
         {
-            await RecoverProcessingAsync(stoppingToken);
-
             var pollingInterval = TimeSpan.FromMilliseconds(options.Value.PollingIntervalMilliseconds);
+
+            // Startup recovery must succeed before any Pending request is processed; if the database is unavailable,
+            // it is retried every polling interval.
+            while (!await TryRecoverProcessingAsync(stoppingToken))
+            {
+                await Task.Delay(pollingInterval, timeProvider, stoppingToken);
+            }
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 var processed = false;
@@ -48,7 +54,11 @@ public sealed class RequestProcessingWorker(
         }
     }
 
-    private async Task RecoverProcessingAsync(CancellationToken stoppingToken)
+    /// <summary>
+    /// Resumes every request found in Processing. Returns <c>false</c> only when the list cannot be read (e.g. database
+    /// unavailable), so the caller retries; a failure resuming one request is logged and the others are still attempted.
+    /// </summary>
+    private async Task<bool> TryRecoverProcessingAsync(CancellationToken stoppingToken)
     {
         IReadOnlyList<Guid> orphaned;
         try
@@ -56,19 +66,21 @@ public sealed class RequestProcessingWorker(
             await using var scope = scopeFactory.CreateAsyncScope();
             var repository = scope.ServiceProvider.GetRequiredService<IServiceRequestRepository>();
             orphaned = (await repository.ListAsync(ServiceRequestStatus.Processing, stoppingToken))
+                .OrderBy(r => r.CreatedAt)
+                .ThenBy(r => r.Id)
                 .Select(r => r.Id)
                 .ToList();
         }
         catch (Exception exception) when (!stoppingToken.IsCancellationRequested)
         {
-            // Do not stop the host (e.g. database unavailable at startup); polling continues and retries each interval.
-            logger.LogError(exception, "Startup recovery could not list Processing requests; continuing with polling");
-            return;
+            logger.LogError(exception,
+                "Startup recovery could not list Processing requests; retrying before processing Pending requests");
+            return false;
         }
 
         if (orphaned.Count == 0)
         {
-            return;
+            return true;
         }
 
         logger.LogInformation("Startup recovery: {Count} request(s) found in Processing", orphaned.Count);
@@ -85,5 +97,7 @@ public sealed class RequestProcessingWorker(
                 logger.LogError(exception, "Startup recovery failed for request {RequestId}; it stays Processing", id);
             }
         }
+
+        return true;
     }
 }

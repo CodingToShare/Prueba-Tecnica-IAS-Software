@@ -102,6 +102,8 @@ public sealed class ServiceRequestProcessor(
                 request.ExternalReference, request.Status);
         }
 
-        await repository.UpdateAsync(request, cancellationToken);
+        // The provider outcome already exists, so record it even if shutdown was requested meanwhile; cancelling this
+        // write would leave the request Processing and cause a second provider call after restart.
+        await repository.UpdateAsync(request, CancellationToken.None);
     }
 }

@@ -21,7 +21,7 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 02.4 | Documentation/evidence | 2 min | Complete |
 | 03 | Background processing and resilience | 20 min | In Progress |
 | 03.1 | Development | 9 min | Complete |
-| 03.2 | Technical/resilience review | 3 min | Not Started |
+| 03.2 | Technical/resilience review | 3 min | Complete |
 | 03.3 | Automated + functional validation | 6 min | Not Started |
 | 03.4 | Documentation/evidence | 2 min | Not Started |
 | 04 | React portal | 18 min | Not Started |
@@ -380,6 +380,37 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   provider state is lost on restart (documented limitation) · Phase 02 findings 1, 2 unchanged; 500 regression test
   scheduled for 03.3.
 - Timing: see Phase 03.1 commit timestamp.
+
+### Phase 03.2 — Complete (review gate; Phase 03 In Progress)
+
+- Baseline: build 0 warnings; tests 86/86.
+- Reviewed actual code: Core/Infrastructure reference no Worker or Polly (TD-20 holds; transitions stay in the
+  entity); claim is awaited and persisted before the provider call, so a failed claim save throws before any provider
+  call; Polly handles only `TransientProviderException` (2 retries, 3 calls; attempts logged 1..3); cancellation
+  (`OperationCanceledException`) is not handled by the pipeline or the processor, never becomes `Failed`, and the
+  Worker treats it as shutdown; Worker holds only singletons and opens one disposed scope per unit;
+  one `TimeProvider` for timestamps and delays; `AddWindowsService("ServiceRequestsWorker")` keeps console execution.
+- **B-01 (BLOCKER, fixed):** when listing Processing rows failed at startup (database unavailable), the 03.1 code
+  logged and went straight to Pending polling; recovery was never retried, so Processing rows stayed stranded until
+  the next restart and newer Pending requests ran first. The 03.1 evidence ("process stays alive") was true but the
+  recovery guarantee was not. Fix: recovery is retried every polling interval until the list succeeds; Pending
+  polling starts only afterwards; orphans resumed oldest first. New `Worker/RequestProcessingWorkerTests`: list fails
+  twice then succeeds → recovered before the first Pending poll (fails against the 03.1 code: verified by running it
+  on the previous file); one orphan with an unexpected error does not prevent recovering the next.
+- **M-01 (MEDIUM, fixed):** the final Completed/Failed write used the shutdown token; a stop right after a provider
+  success could cancel it and leave the request Processing (second provider call after restart). The final write now
+  uses `CancellationToken.None` (bounded by the host shutdown timeout); provider call, retry delays, claim and polling
+  still honor the token.
+- LOW: no test yet for "claim save fails → provider not called" (code order is correct) — add in 03.3 · a database
+  outage in the middle of recovery leaves the affected rows Processing until restart (same accepted trade-off).
+- Notes / accepted: unexpected exception → not retried, logged, request stays Processing until the next Worker start
+  (single-Worker trade-off, TD-20; not retried within the same run) · permanent service-code match is
+  case-insensitive by provider configuration (documented in `ExternalProviderOptions`), independent of OD-02 ·
+  simulated provider records an effect with an atomic `TryAdd`, so concurrent calls for one reference produce at most
+  one effect; state is per process only · Phase 02 findings: timestamp backfill and StringLength-before-trim remain
+  non-blocking, 500 regression still pending 03.3, EF command logs stay at Warning.
+- Validation: focused Worker tests 17/17; full `dotnet build` 0 warnings, `dotnet test` 88/88, 0 skipped.
+- Timing: see Phase 03.2 commit timestamp.
 
 ## Unfinished Work Template
 

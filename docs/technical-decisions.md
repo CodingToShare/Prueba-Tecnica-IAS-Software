@@ -261,12 +261,16 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
   directly (host-free). Core defines `IExternalProvider`, `TransientProviderException`, `PermanentProviderException`.
   Transient → retried (2 retries, constant delay) then `Failed` with a concise reason; permanent → `Failed` after one
   call; any other exception → not retried, propagates, request stays `Processing`, Worker logs it and continues, and
-  the request is resumed on the next start. One Pending request at a time, oldest first; polling interval
-  configurable. Simulated provider is deterministic (`TransientFailuresBeforeSuccess`, `PermanentFailureServiceCodes`).
+  the request is resumed on the next start. Startup recovery runs before any Pending request and is retried every
+  polling interval while the Processing list cannot be read (Phase 03.2). The final Completed/Failed write is not
+  cancelled by shutdown once the provider outcome exists. One Pending request at a time, oldest first; polling
+  interval configurable. Simulated provider is deterministic (`TransientFailuresBeforeSuccess`, `PermanentFailureServiceCodes`).
   Recorded 2026-11-14 (Phase 03.1).
 - **Trade-off:** a request hit by an unexpected error waits for a Worker restart.
 - **Risks:** repeated unexpected errors could keep requests in Processing; visible through logs and the status filter.
-- **Validation:** Phase 03.1 — 15 focused tests; manual end-to-end and startup-recovery runs (roadmap evidence).
+- **Validation:** Phase 03.1 — 15 focused tests; manual end-to-end and startup-recovery runs. Phase 03.2 — Worker
+  tests: recovery retried after list failures and completed before Pending polling; one failing orphan does not
+  block the others.
 - **Future evolution:** periodic recovery of stale Processing rows using `UpdatedAt` as a lease.
 
 ---
