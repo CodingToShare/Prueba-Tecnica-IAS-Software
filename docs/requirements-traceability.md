@@ -36,10 +36,10 @@ Status: `Planned` → `In Progress` → `Verified` (or `Deferred` with reason).
 | --- | --- | --- | --- | --- | --- |
 | TC-01 | C# + ASP.NET Core Web API backend | 01 | R | 01.1–01.3: `net10.0` ASP.NET Core Web API (controllers) builds with SDK 10.0.404, 0 warnings | Verified |
 | TC-02 | Exactly one frontend technology (React) | 04 | R | | Planned |
-| TC-03 | SQL implemented + 3–5 lines on the NoSQL alternative | 01, 06 | R, D | | Planned |
+| TC-03 | SQL implemented + 3–5 lines on the NoSQL alternative | 01, 06 | R, D | SQL part: SQL Server via EF Core migrations, LocalDB tests (01.3, 02.3); NoSQL paragraph pending 06 (draft in TD-03) | In Progress |
 | TC-04 | Inputs, errors, configuration and secrets handled safely | 02–04 | U, R | 02.3: 400/409 `application/problem+json` (HTTP tests); 02.2: generic 500 without internals, CORS restricted (manual); Worker/UI pending 03–04 | In Progress |
 | TC-05 | Worker runnable manually + Windows Service approach documented | 03, 06 | M, D | | Planned |
-| TC-06 | No Docker/cloud/CI required to run | all | R | | Planned |
+| TC-06 | No Docker/cloud/CI required to run | all | R | Phases 01–02: build, migrations, API and tests ran with only the .NET SDK + LocalDB (README commands); re-check at 07 | In Progress |
 | TC-07 | Executable path prioritized; unfinished parts documented (state · decision · next step) | 07 | D | | Planned |
 
 ## Legacy Review (challenge §5)
@@ -54,8 +54,8 @@ Status: `Planned` → `In Progress` → `Verified` (or `Deferred` with reason).
 | ID | Item | Phase | Levels | Evidence | Status |
 | --- | --- | --- | --- | --- | --- |
 | D-01 | Git history shows the evolution of the solution | all | R | Local phase checkpoint commits (`git log`) | In Progress |
-| D-02 | Brief reproducible instructions: backend, frontend, storage, Worker | 06 | M, D | | Planned |
-| D-03 | Executable tests + note on covered scenarios | 05, 06 | U, D | | Planned |
-| D-04 | Decision log: context, alternatives, decision, trade-offs, risks, validation | 00, 06 | D | Format established in `technical-decisions.md` | In Progress |
+| D-02 | Brief reproducible instructions: backend, frontend, storage, Worker | 06 | M, D | 02.4: README storage, build, run (API) and test commands, each executed; frontend and Worker pending 03–04 | In Progress |
+| D-03 | Executable tests + note on covered scenarios | 05, 06 | U, D | 02.4: README test table (suites, needs, scenarios); 71 tests pass; Worker tests pending 03 | In Progress |
+| D-04 | Decision log: context, alternatives, decision, trade-offs, risks, validation | 00, 06 | D | `technical-decisions.md` TD-01…TD-19; Phase 01–02 decisions carry all seven fields with executed validation (02.4) | In Progress |
 | D-05 | Business/technical assumptions | 00, 06 | D | A-01…A-06 registered | In Progress |
-| D-06 | AI usage note (what for, how verified, what corrected/rejected) | 06 | D | `docs/ai/ai-usage.md` — incremental evidence; final README disclosure pending Phase 06 | Planned |
+| D-06 | AI usage note (what for, how verified, what corrected/rejected) | 06 | D | `docs/ai/ai-usage.md` — incremental evidence through 02.4; README links it; final disclosure pending Phase 06 | Planned |

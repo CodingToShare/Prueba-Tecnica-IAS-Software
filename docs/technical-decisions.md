@@ -41,7 +41,9 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **NoSQL alternative (README, 3–5 lines):** `externalReference` as document id (uniqueness by key), conditional
   writes/ETags for state transitions and the Worker claim, secondary index on status, schema versioned in code instead
   of migrations.
-- **Validation:** pending (Phase 01 migration on empty database).
+- **Validation:** Phase 01.3 / 02.3 — migrations applied to an empty LocalDB database with `dotnet ef database update`
+  (database dropped and recreated in 02.3); LocalDB integration tests pass.
+- **Future evolution:** connection string per environment; idempotent migration scripts for deployments.
 
 ### TD-04 — Pragmatic four-project backend
 
@@ -50,7 +52,8 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Decision:** `Core` (entity, transitions, use cases, interfaces), `Infrastructure` (EF Core, simulated provider), `Api`, `Worker`.
 - **Trade-off:** Core mixes domain and application concerns.
 - **Risks:** Low.
-- **Validation:** pending (project references respect dependency direction).
+- **Validation:** Phase 01.2 — `.csproj` references inspected (Core has no package/project references; Infrastructure
+  → Core; Api/Worker → Infrastructure); unchanged through Phase 02 (Core still package-free).
 - **Future evolution:** split Domain/Application only if the domain grows.
 
 ### TD-05 — `externalReference` as idempotency key
@@ -61,6 +64,7 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Trade-off:** "Equivalent" had to be defined (OD-02 → TD-19).
 - **Risks:** A client reusing a reference for a different operation gets 409 (intended).
 - **Validation:** Phase 02.1 manual smoke; Phase 02.3 unit (Moq) and functional HTTP tests for 201/200/409.
+- **Future evolution:** an `Idempotency-Key` header if clients ever need retries without a business reference.
 
 ### TD-06 — Database UNIQUE constraint as final guard
 
@@ -71,6 +75,7 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Risks:** Translation must not leak SQL details.
 - **Validation:** Phase 01.3 / 02.3 — duplicate (also case-variant) rejected with 2601/2627; repository maps it to
   `TryAddAsync == false`; no SQL details reach clients. Known noise: EF logs the handled race at Error (Phase 05).
+- **Future evolution:** filter or demote the EF error logs for the handled duplicate case.
 
 ### TD-07 — Separate Worker Service
 
@@ -129,7 +134,8 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Alternatives:** broad coverage including UI/E2E tests.
 - **Decision:** xUnit + Moq on state transitions, retry, idempotency, input validation; written with each phase.
 - **Trade-off:** No automated UI/E2E tests; frontend validated by build + manual smoke.
-- **Validation:** pending.
+- **Validation:** Phases 01–02 — 71 tests (transitions, idempotency incl. race, validation, LocalDB, HTTP); targeted
+  mutations made them fail (01.3, 02.3). Retry tests pending Phase 03.
 
 ### TD-13 — Visual language from design system v3
 
@@ -152,7 +158,8 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Alternatives:** Serilog; OpenTelemetry.
 - **Decision:** `Microsoft.Extensions.Logging` with structured templates; no metrics or tracing.
 - **Trade-off:** Console output only.
-- **Validation:** pending.
+- **Validation:** Phase 02 — API logs created/replayed/conflict with `{ExternalReference}` (conflict warning seen in
+  the 02.1 smoke); EF SQL command logs lowered to Warning; parameter values not logged. Worker logs pending Phase 03.
 - **Future evolution:** Windows Event Log provider when hosted as a Windows Service.
 
 ### TD-15 — Dependency versions pinned when introduced
@@ -191,6 +198,8 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Risks:** slower tests; leftover test databases → fixture drops its database.
 - **Validation:** Phase 01.3 — 6 LocalDB tests pass (migration, indexes, UNIQUE rejection 2601/2627, mapping, round
   trip, status query); unique per-run database dropped afterwards; override variable `SERVICEREQUESTS_TEST_SQLSERVER`.
+  Phase 02.3 — 12 LocalDB integration tests and 13 HTTP tests share the per-run database; none left behind.
+- **Future evolution:** run the same suite against a full SQL Server instance in CI if one is introduced.
 
 ### TD-18 — Server-owned UTC timestamps (`CreatedAt`, `UpdatedAt`)
 
@@ -206,6 +215,7 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Risks:** rows created before the migration would receive `0001-01-01` (none exist).
 - **Validation:** Phase 02.1 — domain timestamp tests; Phase 02.3 — service test with fixed `TimeProvider`, exact
   UTC round trip on LocalDB, columns `datetimeoffset NOT NULL`, HTTP 201 body has equal `createdAt`/`updatedAt`.
+- **Future evolution:** an index on `CreatedAt` only if listing volume makes the sort expensive.
 
 ### TD-19 — External reference identity and equivalent replay (resolves OD-02)
 
@@ -228,6 +238,8 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
   case change → 409. Phase 02.2 — all six challenge cases behave as specified; different-case lookup uses an Index
   Seek on `UX_ServiceRequests_ExternalReference`. Phase 02.3 — SQL Server rejects a case-variant duplicate; unit
   race tests (re-read + same rule); HTTP case-variant replay → 200 same id; mutations of collation/rule detected.
+- **Future evolution:** if business values must become case-insensitive, change `HasEquivalentPayload` in one place
+  and record the decision.
 
 ---
 

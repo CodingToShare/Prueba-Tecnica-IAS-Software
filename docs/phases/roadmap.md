@@ -14,11 +14,11 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 01.1 | Solution, domain and persistence development | 7 min | Complete |
 | 01.2 | Requirement, architecture and implementation review | 3 min | Complete |
 | 01.3 | Unit, integration and functional validation | 5 min | Complete |
-| 02 | Idempotent API | 22 min | In Progress |
+| 02 | Idempotent API | 22 min | Complete |
 | 02.1 | Development | 10 min | Complete |
 | 02.2 | Technical/requirements review | 4 min | Complete |
 | 02.3 | Automated + functional tests | 6 min | Complete |
-| 02.4 | Documentation/evidence | 2 min | Not Started |
+| 02.4 | Documentation/evidence | 2 min | Complete |
 | 03 | Background processing and resilience | 20 min | Not Started |
 | 04 | React portal | 18 min | Not Started |
 | 05 | Critical test hardening | 12 min | Not Started |
@@ -320,6 +320,28 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   → Done; history has `InitialCreate` and `AddRequestTimestamps`; PK, UNIQUE and Status indexes present; timestamp
   columns `datetimeoffset`. No `ServiceRequestsDb_Tests_*` databases left.
 - Timing: see Phase 02.3 commit timestamp.
+
+### Phase 02.4 — Complete → Phase 02 Complete
+
+- `README.md` created as the current execution guide (purpose, architecture, validated prerequisites, database
+  initialization, build/run/test, API, idempotency semantics, configuration, status, deferred work, AI link).
+  Every command was executed in this phase or earlier: `dotnet tool restore`, `dotnet restore`,
+  `dotnet ef database update …`, `dotnet build ServiceRequests.sln`, `dotnet run --project src/ServiceRequests.Api`
+  (launch profile → `http://localhost:5164`, GET → 200), `dotnet test ServiceRequests.sln`; startup with an empty
+  `ConnectionStrings__ServiceRequests` fails with the configured `InvalidOperationException`.
+- Decisions: TD-03, TD-05, TD-06, TD-17, TD-18, TD-19 completed with "Future evolution"; TD-03 validation updated
+  (was still "pending"). OD-01…OD-04 all resolved with dates.
+- Traceability: TC-03, TC-06, D-02, D-03, D-04 updated with executed evidence; final README items remain Phase 06.
+- AI log: Phase 02 rows checked against history; missing row for the `f0c84ab` documentation follow-up added.
+- Design reference: the owner's deletion of the "changes" section was already committed in `f0c84ab` together with
+  the documentation cleanup; no HTML diff remains and no stale references are found (`grep`).
+- **Phase 02 summary:** build 0 warnings/0 errors; tests 71/71 (46 unit, 12 LocalDB integration, 13 HTTP), 0 skipped;
+  migrations `InitialCreate` + `AddRequestTimestamps` applied to a recreated empty database; HTTP 201/200/409/400 and
+  filter verified; case-variant duplicate rejected by SQL Server (`SQL_Latin1_General_CP1_CI_AS`); race re-read
+  verified by unit tests; review findings: DTO trim before length validation (02.2), ProblemDetails media type
+  (02.3); deferred: EF error logs on a handled race (Phase 05). Commits: 02.1 `a491ccc`, 02.2 `47b8067`,
+  02.3 `147c7db`, 02.4 this checkpoint (`git log`).
+- Timing: see Phase 02.4 commit timestamp.
 
 ## Unfinished Work Template
 
