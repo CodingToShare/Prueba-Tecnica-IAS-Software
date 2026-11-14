@@ -173,7 +173,8 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Validation:** Phases 01–02 — 71 tests (transitions, idempotency incl. race, validation, LocalDB, HTTP); targeted
   mutations made them fail (01.3, 02.3). Phase 03 — 100 tests incl. retry/recovery/end-to-end Worker; six mutations
   detected. Phase 04.3 — browser acceptance of 201/200/409/400/filter/Failed/network recovery/refresh and 1440/768/390 px
-  review (roadmap evidence).
+  review (roadmap evidence). Phase 05 — 102 tests incl. real concurrent POSTs on LocalDB; Phase 06.3 — README-driven
+  run of the suite: 102 passed, 0 failed, 0 skipped.
 
 ### TD-13 — Visual language from design system v3
 

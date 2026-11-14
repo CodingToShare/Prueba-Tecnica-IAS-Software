@@ -34,11 +34,11 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 05.2 | Test-quality / logging review | 2 min | Complete |
 | 05.3 | Full delivery regression | 4 min | Complete |
 | 05.4 | Documentation / evidence | 2 min | Complete |
-| 06 | Documentation and legacy review | 10 min | In Progress |
+| 06 | Documentation and legacy review | 10 min | Complete |
 | 06.1 | Delivery documentation | 4 min | Complete |
 | 06.2 | Documentation / requirement audit | 2 min | Complete |
 | 06.3 | Reviewer reproducibility dry run | 2 min | Complete |
-| 06.4 | Final evidence / Phase 06 closure | 2 min | Not Started |
+| 06.4 | Final evidence / Phase 06 closure | 2 min | Complete |
 | 07 | Final validation and delivery | 5 min | Not Started |
 | — | Contingency reserve | 5 min | — |
 
@@ -757,6 +757,22 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   `dotnet build ServiceRequests.sln` added to the Tests block after running it. All other commands matched as written.
 - Cleanup: hosts and dev server stopped; `ServiceRequestsDb_Dryrun` dropped. No Windows Service installed.
 - Timing: see Phase 06.3 commit timestamp.
+
+### Phase 06.4 — Complete → Phase 06 Complete
+
+- Traceability: every requirement owned by Phase 06 is Verified with documentation or earlier runtime evidence —
+  R-05/TC-05 (Worker + Windows Service path), R-07, BR-07, TC-03 (NoSQL note), LR-01/LR-02 (legacy review), D-02
+  (reproducible instructions, 06.3 dry run), D-03, D-04, D-05, D-06 (AI disclosure). Open only for Phase 07: D-01 (Git
+  history), TC-06 (no Docker/cloud/CI, final check), TC-07 (unfinished parts statement).
+- Consistency check across README, decisions, traceability, roadmap, AI log, legacy review and project context: same
+  stack, commands, ports (5164/5173), test result (102/102), limitations (OF-01, OF-03, OF-04) and accepted trade-offs
+  (TD-22 resolved, TD-09, TD-21); TD-12 validation now records the final test count.
+- **Phase 06 summary:** README rebuilt as the reviewer entry point (quick start, demo, API, idempotency without an
+  exactly-once claim, retries, Windows Service validated vs documented, tests, decisions, SQL vs NoSQL, limitations vs
+  trade-offs, AI disclosure); `docs/legacy-review.md` added; audit corrections (demo wording, safe MVC sample, labels);
+  README-driven dry run passed on a dedicated database. Commits: 06.1 `2d600f2`, 06.2 `19cc400`, 06.3 `889e9a5`,
+  06.4 this checkpoint (`git log`).
+- Timing: see Phase 06.4 commit timestamp.
 
 ## Unfinished Work Template
 
