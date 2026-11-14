@@ -34,7 +34,11 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 05.2 | Test-quality / logging review | 2 min | Complete |
 | 05.3 | Full delivery regression | 4 min | Complete |
 | 05.4 | Documentation / evidence | 2 min | Complete |
-| 06 | Documentation and legacy review | 10 min | Not Started |
+| 06 | Documentation and legacy review | 10 min | In Progress |
+| 06.1 | Delivery documentation | 4 min | Complete |
+| 06.2 | Documentation / requirement audit | 2 min | Not Started |
+| 06.3 | Reviewer reproducibility dry run | 2 min | Not Started |
+| 06.4 | Final evidence / Phase 06 closure | 2 min | Not Started |
 | 07 | Final validation and delivery | 5 min | Not Started |
 | — | Contingency reserve | 5 min | — |
 
@@ -693,6 +697,28 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   build 0 warnings, 102/102 tests, migrations from zero, real-stack smoke A–D, frontend ci/build/lint.
   Commits: 05.1 `638a5ae`, 05.2 `85a2695`, 05.3 `77a528b`, 05.4 this checkpoint (`git log`).
 - Timing: see Phase 05.4 commit timestamp.
+
+### Phase 06.1 — Complete (Phase 06 In Progress)
+
+- Baseline: `dotnet build` 0 warnings, `dotnet test` 102/102, portal `npm run build` OK; working tree clean.
+- README reorganized as the reviewer entry point: problem and implemented solution, runtime architecture + code
+  dependency rule, stack with recorded versions, validated prerequisites, quick start (tools, migrations, API :5164,
+  Worker, portal :5173 via `.env.local` + `npm run dev`), reviewer demo (success with retry, 200 replay, 409,
+  `UNSUPPORTED` → Failed, filter), API contract, idempotency (local UNIQUE + collation + race re-read; provider
+  effects: no exactly-once claim), background processing (2 retries = at most 3 calls), Windows Service (validated
+  console host + publish vs documented registration), tests (categories, tools, 102, mutation checks, no coverage %),
+  key decisions, SQL Server vs NoSQL (short), portal, configuration, legacy summary, assumptions, limitations vs
+  accepted trade-offs table, closed findings, final AI disclosure.
+- New `docs/legacy-review.md`: WebForms SQL injection → parameterized `SqlCommand`; MVC null `Find`, unrestricted
+  status, bypassed transitions/Completed regression, entity returned, anti-forgery note → minimal corrected action.
+  Representative .NET Framework code (the fragments are not in this repository); not compiled here.
+- Facts checked against the repository for the README: ports (`launchSettings.json` 5164, Vite 5173, CORS), keys and
+  defaults (`appsettings.json` API/Worker, `.env.example`), npm scripts, migrations, endpoints, package versions
+  (TD-15), test count (102).
+- Traceability: R-07, BR-07, TC-03, LR-01, LR-02, D-04, D-05, D-06 Verified (documentation deliverables); runtime
+  requirements keep their earlier test/browser evidence. Decisions reviewed: TD-01…TD-22 cover the requested topics;
+  TD-22 is a resolved decision; no new decision numbers.
+- Timing: see Phase 06.1 commit timestamp.
 
 ## Unfinished Work Template
 

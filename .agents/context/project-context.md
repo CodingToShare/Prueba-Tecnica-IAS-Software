@@ -122,7 +122,7 @@ authentication, pagination, DELETE/generic update.
 
 ## Current Phase
 
-Phases 00–05 complete (React portal in `frontend/service-requests-web`: `npm ci`, `.env.local` from `.env.example`, `npm run dev` on :5173; 102 tests; EF race log accepted, TD-22). Phase 06 (documentation and legacy review) awaits authorization.
+Phases 00–05 complete (React portal in `frontend/service-requests-web`: `npm ci`, `.env.local` from `.env.example`, `npm run dev` on :5173; 102 tests; EF race log accepted, TD-22). Phase 06 In Progress: 06.1 delivery documentation complete (README, `docs/legacy-review.md`); 06.2–06.4 await authorization.
 Execution guide: `README.md`. API: `POST /api/requests`, `GET /api/requests[?status=]`; CORS origin from
 `Cors:AllowedOrigins` (default `http://localhost:5173`).
 Tests: `dotnet test ServiceRequests.sln` (102: unit incl. Worker, LocalDB integration incl. Worker processing, functional API + Worker host + 500; LocalDB integration, HTTP via WebApplicationFactory; persistence tests use a throwaway LocalDB database, TD-17; override
