@@ -28,8 +28,25 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Decision:** React + TypeScript + Vite, hooks and native `fetch`.
 - **Trade-off:** No state/query library — manual loading/error handling.
 - **Risks:** Low; one screen.
-- **Validation:** pending (Phase 04 `npm run build` + manual smoke).
+- **Validation:** Phase 04.1 — `npm run build` (strict `tsc -b` + `vite build`) and `npm run lint` pass; smoke with
+  API + Worker + Vite rendered a processed request. Full functional/visual validation in 04.3.
 - **Future evolution:** add a query library if screens and caching needs grow.
+
+### TD-21 — Portal refresh, API configuration and error presentation
+
+- **Context:** Requests change status in the background; the UI must show progress without a page reload; 201/200/409/
+  400/5xx have different meanings (design contract §4).
+- **Alternatives:** manual refresh only; Server-Sent Events/SignalR (new backend surface); React Query/SWR polling.
+- **Decision:** a small hook refreshes the list every 3 s while the page is visible, schedules the next request only
+  after the previous one settles (no overlap), aborts on unmount/filter change and exposes manual refresh; the status
+  filter is sent to the API. `VITE_API_BASE_URL` (public, `.env.example`) sets the API origin, defaulting to the page
+  origin. The fetch client keeps HTTP status and ProblemDetails; the UI maps them to the contract alerts and never shows
+  server `detail` for 5xx. Linting uses oxlint, the linter shipped by the Vite 8 scaffold. Recorded 2026-11-14
+  (Phase 04.1).
+- **Trade-off:** up to 3 s delay before a status change appears; one GET every 3 s per open tab.
+- **Risks:** many open tabs multiply polling (acceptable for an internal portal).
+- **Validation:** Phase 04.1 — build/lint; smoke render of a Worker-processed request. Behavior checks in 04.3.
+- **Future evolution:** server push (SSE) if the number of users grows.
 
 ### TD-03 — SQL Server instead of NoSQL
 
@@ -184,6 +201,9 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
   10.0.15 (functional HTTP tests).
 - **Pinned in Phase 03.1 (Worker):** `Polly.Core` 8.9.1 (retry pipeline), `Microsoft.Extensions.Hosting.WindowsServices`
   10.0.15 (`AddWindowsService`).
+- **Pinned in Phase 04.1 (frontend, exact versions):** `react`/`react-dom` 19.3.1; dev: `vite` 8.3.8,
+  `@vitejs/plugin-react` 6.3.0, `typescript` 7.0.2, `oxlint` 1.93.0, `@types/react` 19.3.0, `@types/react-dom` 19.3.0,
+  `@types/node` 24.19.2 (scaffold `create-vite@9.3.3`); `package-lock.json` committed.
 
 ### TD-16 — Explicit database initialization through EF Core migrations (resolves OD-03)
 

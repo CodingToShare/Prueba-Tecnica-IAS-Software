@@ -1,0 +1,54 @@
+/* Design tokens — copied from docs/design/reference/design-system-v3.html (:root), subset per
+   docs/design/design-system.md §3. Components consume these variables, never raw values. */
+:root {
+  /* Action */
+  --brand-primary: #1e3a5f;
+  --brand-primary-hover: #16314f;
+  --brand-primary-active: #0f2238;
+  --brand-primary-soft: #eaeff5;
+  --brand-primary-ring: rgba(30, 58, 95, .28);
+  --navy: #1e3a5f;
+  --navy-900: #0f2238;
+
+  /* Neutrals */
+  --color-heading: #11203a;
+  --color-text: #28324a;
+  --color-text-muted: #5d6880;
+  --color-text-subtle: #9aa3b8; /* placeholders/decoration only, never informative text */
+  --color-border: #e7eaf2;
+  --color-border-strong: #d4d9e6;
+  --page-bg: #f5f6fb;
+  --surface: #ffffff;
+  --surface-muted: #f3f5fa;
+
+  /* Semantic tones (text >= 4.5:1 on its soft background) */
+  --normal: #0f766e;        --normal-soft: #e3f4f1;        /* Completed, 201 */
+  --informational: #1e3a5f; --informational-soft: #eaeff5; /* Processing, 200 replay */
+  --warning: #8a6100;       --warning-soft: #fcf2dd;       /* 409 conflict */
+  --critical: #9f1239;      --critical-soft: #fdecef;      /* Failed */
+  --neutral: #5d6880;       --neutral-soft: #f3f5fa;       /* Pending */
+
+  /* Destructive: system errors only (no destructive actions exist in this product) */
+  --destructive: #dc2626;
+  --destructive-text: #b91c1c;
+  --destructive-soft: #fdecec;
+
+  /* Shape & type */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 26px;
+  --shadow-xs: 0 1px 2px rgba(17, 32, 58, .05);
+  --shadow-sm: 0 2px 6px rgba(17, 32, 58, .06);
+  --shadow-md: 0 6px 20px rgba(17, 32, 58, .07);
+  --font-sans: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Component values taken from the reference component CSS (kept here so components use no raw values) */
+  --on-brand: #ffffff;
+  --on-brand-muted: #cdd6e6;
+  --on-brand-spinner-track: rgba(255, 255, 255, .4);
+  --brand-primary-soft-hover: #dde6f0;
+  --shadow-primary: 0 6px 16px rgba(30, 58, 95, .26);
+  --destructive-ring: rgba(220, 38, 38, .2);
+  --skeleton-highlight: #e9ecf4;
+}

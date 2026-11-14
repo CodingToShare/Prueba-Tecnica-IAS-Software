@@ -24,7 +24,11 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 03.2 | Technical/resilience review | 3 min | Complete |
 | 03.3 | Automated + functional validation | 6 min | Complete |
 | 03.4 | Documentation/evidence | 2 min | Complete |
-| 04 | React portal | 18 min | Not Started |
+| 04 | React portal | 18 min | In Progress |
+| 04.1 | Development | 8 min | Complete |
+| 04.2 | UX / architecture / contract review | 3 min | Not Started |
+| 04.3 | Build + functional + visual validation | 5 min | Not Started |
+| 04.4 | Documentation / evidence / AI | 2 min | Not Started |
 | 05 | Critical test hardening | 12 min | Not Started |
 | 06 | Documentation and legacy review | 10 min | Not Started |
 | 07 | Final validation and delivery | 5 min | Not Started |
@@ -470,6 +474,43 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   simulated provider state not durable, single Worker. Commits: 03.1 `9c52fcc`, 03.2 `b6d2770`, 03.3 `163d99a`,
   03.4 this checkpoint (`git log`).
 - Timing: see Phase 03.4 commit timestamp.
+
+### Phase 04.1 — Complete (Phase 04 In Progress)
+
+- Entry: Node 24.21, npm 11.19; backend baseline build 0 warnings, tests 100/100; working tree clean.
+- Scaffold: `create-vite@9.3.3` (released 2026-10-27) `react-ts`, non-interactive; demo counter, logos, sample CSS,
+  template README and icons removed. Exact versions pinned: react/react-dom 19.3.1, vite 8.3.8,
+  @vitejs/plugin-react 6.3.0, typescript 7.0.2, oxlint 1.93.0 (scaffold linter), @types/* (react 19.3.0,
+  react-dom 19.3.0, node 24.19.2). `npm audit`: 0 vulnerabilities. `"strict": true` added to `tsconfig.app.json`.
+- Structure: `api/serviceRequestsApi.ts` (native fetch; `URL` + `URLSearchParams`; `ApiError` keeps status and
+  ProblemDetails; network failure → status 0; abort passes through), `models/serviceRequest.ts` (contract types,
+  max lengths), `hooks/useRequestList.ts` (status filter sent to the API; refresh every 3 s while the page is visible,
+  next load scheduled only after the current one settles, `AbortController` + cleanup on unmount/filter change,
+  manual refresh), components `CreateRequestForm`, `RequestStatusFilter`, `RequestsTable`, `FeedbackAlert`, `App`.
+- Base URL from `VITE_API_BASE_URL` (`.env.example` → `http://localhost:5164`; falls back to the page origin);
+  no `.env` committed.
+- Create flow: labels, client required/length checks (convenience), `aria-invalid` + `aria-describedby`, submit
+  disabled with spinner and "Registrando…" plus an in-flight guard; 201 → `alert-normal` + reset + list refresh;
+  200 → `alert-informational` ("ya existía… no se creó un duplicado") + reset + refresh; 409 → `alert-warning`, input
+  kept; 400 → field errors mapped from `errors` keys + `alert-error`; network/5xx → `alert-error` with "Reintentar"
+  (resubmits the same values; server detail never shown).
+- List: columns Referencia externa (+ description), Cliente, Servicio, Estado, Actualizada (`updatedAt`, `es-CO`
+  `Intl.DateTimeFormat`, `<time datetime>` + full date in `title`); badges `badge-{pending|processing|completed|failed}`
+  (color + text + shape); segmented filter with `aria-pressed`; skeleton loading (`aria-busy`), "Aún no hay
+  solicitudes", "Sin resultados" + "Ver todas", error with "Reintentar" (rows kept when a refresh fails).
+- Design: `styles/tokens.css` = contract §3 tokens + the few literal values from the reference component CSS
+  (on-brand white/muted, secondary hover, skeleton highlight, primary shadow, destructive ring); `styles/app.css` adapts
+  the reference patterns (brand bar gradient, panels, fields, buttons, spinner, segmented, table + stacked rows ≤ 640 px,
+  `td.nowrap`, badges, alerts, states, skip link, focus-visible, reduced motion); two columns from 980 px (form 380 px).
+  No raw colors outside `tokens.css`, no inline styles. Brand bar spans the page (the reference's framed `.app` card
+  is only the simulation frame).
+- Validation (executed): `npm install` (0 vulnerabilities); `npm run build` (`tsc -b` strict + `vite build`) OK;
+  `npm run lint` (oxlint) 0 warnings, 0 errors on 11 files; `dotnet build` 0 warnings; `dotnet test` 100/100.
+  Short smoke: API (`dotnet run`, 5164) + Worker + Vite (5173, `VITE_API_BASE_URL` from the environment); a request
+  created via the API was processed by the Worker and the headless-Edge DOM of the portal showed it with
+  `badge-completed` (CORS path works). Processes stopped, row deleted.
+- Not done here (by scope): visual review at 1440/768/390 px and keyboard pass (04.3); README frontend section (04.4).
+- Timing: see Phase 04.1 commit timestamp.
 
 ## Unfinished Work Template
 
