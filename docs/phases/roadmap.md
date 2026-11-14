@@ -31,7 +31,7 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 04.4 | Documentation / evidence / AI | 2 min | Complete |
 | 05 | Critical test hardening | 12 min | In Progress |
 | 05.1 | Critical test hardening | 4 min | Complete |
-| 05.2 | Test-quality / logging review | 2 min | Not Started |
+| 05.2 | Test-quality / logging review | 2 min | Complete |
 | 05.3 | Full delivery regression | 4 min | Not Started |
 | 05.4 | Documentation / evidence | 2 min | Not Started |
 | 06 | Documentation and legacy review | 10 min | Not Started |
@@ -636,6 +636,26 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   OF-03 unexpected Worker error waits for restart (accepted), OF-04 simulated provider state not durable (accepted).
   Closed: StringLength (02.2), HTTP 500 regression (03.3).
 - Timing: see Phase 05.1 commit timestamp.
+
+### Phase 05.2 — Complete (review gate; Phase 05 In Progress)
+
+- Baseline: `dotnet test` 102/102.
+- Test-quality audit (actual code): every DB/HTTP test class runs in one of two collections, each with its own per-run
+  database (`LocalDb`, `WorkerDb`); references built with `Guid` (the literal `REQ-500` is only used with a mocked
+  repository); no fixed sleeps (one bounded condition wait); no broad `Throws<Exception>`; strict mocks where call
+  arguments matter. Concurrency tests assert scheduler-independent invariants (exactly one 201 — only the inserting
+  request can get it —, one id, one row, no 500, losers 200 or 409), not request order. Findings: none BLOCKER/HIGH/
+  MEDIUM; LOW — the race had no application-level log next to EF's errors (added, see TD-22).
+- OF-02 investigated and resolved as **accepted** (TD-22): sources EF `Database.Command` 20102 `CommandError` and
+  `Update` 10000 `SaveChangesFailed`, one each per losing request; a narrow filter is not possible with EF/logging
+  configuration (level/category only), a decorator was rejected as plumbing for cosmetics, redesign rejected. Added the
+  repository Information log "Idempotency race for …"; `AddInfrastructure` now calls `AddLogging()` (idempotent) so
+  the repository resolves in plain service collections. `CapturingLoggerProvider` records category and event id.
+- Unchanged and still accurate: OF-01 timestamp backfill (migration not edited); OF-03 unexpected Worker error waits
+  for restart; OF-04 simulated provider state per process.
+- Validation: concurrency tests 3 runs (8 EF Error entries + 4 race logs per test each time, assertions green);
+  `dotnet build` 0 warnings; `dotnet test` 102/102.
+- Timing: see Phase 05.2 commit timestamp.
 
 ## Unfinished Work Template
 

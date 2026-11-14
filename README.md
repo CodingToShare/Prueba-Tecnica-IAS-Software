@@ -249,7 +249,7 @@ command logs are kept at `Warning` in both hosts.
 | Critical test hardening | Pending — Phase 05 |
 | NoSQL alternative note, legacy code review, final README | Pending — Phase 06 |
 
-Known items: a handled concurrent-insert race is logged by EF Core at Error level (review in Phase 05); rows created
+Known items: a handled concurrent-insert race is logged by EF Core at Error level (events 20102/10000), followed by the application's Information line "Idempotency race for …" — accepted, see TD-22; rows created
 before `AddRequestTimestamps` would get `0001-01-01` timestamps (no such rows exist); a request hit by an unexpected
 Worker error stays Processing until the next Worker start; simulated provider state is not durable across restarts;
 single Worker instance only; the portal refreshes every 3 s (status changes appear with up to that delay). Traceability: [`docs/requirements-traceability.md`](docs/requirements-traceability.md).

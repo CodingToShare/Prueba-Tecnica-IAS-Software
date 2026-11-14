@@ -94,7 +94,7 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Trade-off:** Exception-driven path for the rare race.
 - **Risks:** Translation must not leak SQL details.
 - **Validation:** Phase 01.3 / 02.3 — duplicate (also case-variant) rejected with 2601/2627; repository maps it to
-  `TryAddAsync == false`; no SQL details reach clients. Known noise: EF logs the handled race at Error (Phase 05). Phase 05.1 — 5 concurrent POSTs through the real API on LocalDB: one row, one id, losers resolved as 200 or 409, no 500; each loser produced 2 EF Error logs.
+  `TryAddAsync == false`; no SQL details reach clients. Known noise: EF logs the handled race at Error (accepted, TD-22). Phase 05.1 — 5 concurrent POSTs through the real API on LocalDB: one row, one id, losers resolved as 200 or 409, no 500; each loser produced 2 EF Error logs.
 - **Future evolution:** filter or demote the EF error logs for the handled duplicate case.
 
 ### TD-07 — Separate Worker Service
@@ -306,6 +306,28 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
   block the others. Phase 03.3 — LocalDB processor tests and API → Worker host → GET functional tests through the
   production composition (`AddRequestProcessing`); cancellation and failed-claim cases; six mutations detected.
 - **Future evolution:** periodic recovery of stale Processing rows using `UpdatedAt` as a lease.
+
+### TD-22 — EF Core Error logs on a handled UNIQUE race are accepted (resolves OF-02)
+
+- **Context:** When concurrent POSTs race, the loser's insert fails with SQL Server 2601/2627. EF Core logs it before
+  the application handles it: category `Microsoft.EntityFrameworkCore.Database.Command`, event 20102 `CommandError`,
+  and category `Microsoft.EntityFrameworkCore.Update`, event 10000 `SaveChangesFailed` (one of each per loser; 05.1/05.2
+  concurrency tests). The application then re-reads the winner and answers 200 or 409 correctly.
+- **Alternatives:** (a) lower `CommandError`/`SaveChangesFailed` through `ConfigureWarnings` or logging filter rules —
+  applies to every command/save failure, hiding real database errors; (b) a custom logger decorator that drops entries
+  whose exception is a 2601/2627 `SqlException` — extra logging plumbing for a cosmetic gain, and a 2627 can also be a
+  genuine primary-key fault; (c) avoid exception-based uniqueness (pre-locking, `MERGE`/`UPDLOCK` patterns) — more
+  complex, and the UNIQUE index must remain the final guard anyway.
+- **Decision:** keep EF Core's Error entries unchanged. `ServiceRequestRepository` logs right after them, at Information:
+  "Idempotency race for {ExternalReference}: the UNIQUE index rejected a concurrent insert (SQL error {SqlError}); the
+  existing request is re-read", and the controller logs the replay/conflict outcome. Recorded 2026-11-14 (Phase 05.2).
+- **Trade-off:** a correctly handled race shows two Error lines per losing request in the console.
+- **Risks:** operators may read them as failures → the adjacent Information line and README known items explain them.
+- **Validation:** Phase 05.2 — `ConcurrentCreateTests` asserts that every Error-level entry comes from those two EF
+  categories (never from application code) and that the race is explained by the application log; 3 runs × 2 tests:
+  8 EF Error entries and 4 race logs each.
+- **Future evolution:** if log alerting is added, exclude events 20102/10000 only when the same request also emits the
+  idempotency-race log (correlation by trace id).
 
 ---
 

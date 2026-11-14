@@ -1,10 +1,13 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using ServiceRequests.Core;
 
 namespace ServiceRequests.Infrastructure.Persistence;
 
-internal sealed class ServiceRequestRepository(ServiceRequestsDbContext context) : IServiceRequestRepository
+internal sealed class ServiceRequestRepository(
+    ServiceRequestsDbContext context,
+    ILogger<ServiceRequestRepository> logger) : IServiceRequestRepository
 {
     // SQL Server: 2601 duplicate key in a unique index, 2627 unique constraint violation.
     private static readonly int[] UniqueViolationErrorNumbers = [2601, 2627];
@@ -27,6 +30,10 @@ internal sealed class ServiceRequestRepository(ServiceRequestsDbContext context)
         catch (DbUpdateException exception) when (IsUniqueViolation(exception))
         {
             entry.State = EntityState.Detached;
+            // EF Core has already logged the failed command at Error level; this states that it was expected and handled.
+            logger.LogInformation(
+                "Idempotency race for {ExternalReference}: the UNIQUE index rejected a concurrent insert (SQL error {SqlError}); the existing request is re-read",
+                request.ExternalReference, ((SqlException)exception.InnerException!).Number);
             return false;
         }
     }

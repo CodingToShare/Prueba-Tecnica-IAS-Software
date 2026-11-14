@@ -95,13 +95,26 @@ public sealed class ConcurrentCreateTests(LocalDbFixture database, ITestOutputHe
         return await context.ServiceRequests.CountAsync(r => r.ExternalReference == reference);
     }
 
-    // Evidence for OF-02 (not asserted: whether the race branch runs depends on scheduling).
+    // OF-02 evidence. Whether the race branch runs depends on scheduling, so counts are reported, not asserted; what is
+    // asserted: Error-level entries come only from EF Core's command/update logging (never from the application), and
+    // every such race is explained by the application's Information log.
     private void Report(CapturingLoggerProvider logs, string reference)
     {
-        var efErrors = logs.Entries.Count(e => e.Level >= LogLevel.Error);
+        var errors = logs.Entries.Where(e => e.Level >= LogLevel.Error).ToList();
+        var raceLogs = logs.Entries.Count(e => e.Level == LogLevel.Information
+            && e.Message.StartsWith($"Idempotency race for {reference}", StringComparison.Ordinal));
         var replays = logs.Entries.Count(e => e.Message.Contains($"{reference} replayed"));
         var conflicts = logs.Entries.Count(e => e.Message.Contains($"{reference} rejected"));
-        output.WriteLine($"Error-level log entries: {efErrors}; replay logs: {replays}; conflict logs: {conflicts}");
+        var sources = errors.GroupBy(e => $"{e.Category} [{e.EventId.Id} {e.EventId.Name}]").Select(g => $"{g.Key} x{g.Count()}");
+        output.WriteLine($"Error-level entries: {errors.Count} ({string.Join("; ", sources)}); race logs: {raceLogs}; " +
+            $"replay logs: {replays}; conflict logs: {conflicts}");
+
+        Assert.All(errors, e => Assert.Contains(e.Category,
+            new[] { "Microsoft.EntityFrameworkCore.Database.Command", "Microsoft.EntityFrameworkCore.Update" }));
+        if (errors.Count > 0)
+        {
+            Assert.True(raceLogs > 0, "EF logged errors but the application did not log the handled race.");
+        }
     }
 
     private sealed record Body(Guid Id, string CustomerId);

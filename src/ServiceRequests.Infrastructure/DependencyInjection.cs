@@ -25,6 +25,7 @@ public static class DependencyInjection
                 $"Connection string 'ConnectionStrings:{ConnectionStringName}' is not configured.");
         }
 
+        services.AddLogging(); // idempotent; hosts already register it, plain service collections may not
         services.AddDbContext<ServiceRequestsDbContext>(options => options.UseSqlServer(connectionString));
         services.AddScoped<IServiceRequestRepository, ServiceRequestRepository>();
         services.TryAddSingleton(TimeProvider.System);
