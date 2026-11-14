@@ -11,9 +11,13 @@ The visual and interaction contract for the React portal (`frontend/service-requ
 | Defines | Palette, typography, spacing, radii, shadows, buttons, fields, panels, badges, alerts, tables, segmented filter, states, focus/hover/active/disabled | Token subset, request-status semantics, submit-feedback mapping, layout, states, accessibility, responsive rules, validation |
 | Does **not** define | Requirements, domain terms, data, navigation | — |
 
-The reference is design system v3 (Energy Management edition) from a previous project of the same author. Its domain
-content (meters, anomalies, KPIs, charts) and Spanish sample values are **illustrative** and irrelevant here: only its
-**visual language** is reused. The file is kept unmodified; when the two differ, this document wins.
+The reference is the **Portal de Solicitudes edition** of design system v3: it keeps the v3 visual language (tokens,
+typography, radii, shadows, component patterns, accessibility rules) and shows it applied to this product — the portal
+screen (brand bar, form, segmented filter, request table), the request lifecycle, background processing with retries,
+submit-outcome alerts and view states. Its "Cambios respecto a la v3 original" section lists the adaptation.
+Sample references, customers, services and times are **illustrative**, never data or requirements.
+The reference changes only through a recorded design decision and must stay consistent with this contract; when the
+two differ, this document wins.
 
 ## 2. Visual Direction (Adopted From The Reference)
 
@@ -60,7 +64,8 @@ Copied from the reference `:root`, limited to what this product uses. Components
 }
 ```
 
-Not used (reference-only): accents (mint/sky/violet/amber), `data-quality`, chart tokens, `radius-xl`/`shadow-lg` shell.
+The reference also defines `--radius-xl` and `--shadow-lg`, used only for its simulation frame (not needed by the app).
+Removed from v3 because this product does not use them: accents (mint/sky/violet/amber), `data-quality`, chart tokens.
 Font: Google Fonts `<link>` for Plus Jakarta Sans 400–800 (`display=swap`) in `index.html`; no npm dependency.
 
 ## 4. Request Semantics
@@ -84,6 +89,8 @@ Submit outcome → reference alert:
 | 400 Validation | field errors + `alert-error` summary | `alert` | Corrige los campos marcados |
 | Network / 5xx | `alert-error` + "Reintentar" | `alert` | No se pudo contactar el servicio |
 
+The `warning` tone is also used for transient-failure retry steps when processing attempts are shown.
+
 Rules (from the reference):
 - `critical` (a business state needing attention) and `destructive` (system error) are separate tokens; never swap them.
 - Danger styling is never used just to make something look important.
@@ -93,16 +100,17 @@ Rules (from the reference):
 | Pattern | Reference class | Use here |
 | --- | --- | --- |
 | Panel | `.panel`, `.panel-head`, `.panel-body` | "Nueva solicitud" and "Solicitudes" containers |
-| Field | `.field` (label above, `.hint`, `.field.error`) | 4 form fields; error hint in `--destructive-text` |
+| Field | `.field` (label above, `.hint`, `.field.error`), `.form-stack` | 3 inputs + description `textarea`; error hint in `--destructive-text` |
 | Button | `.btn-primary` (+ `.spinner` while sending), `.btn-secondary`, `.btn-outline`, `.btn-sm` | Register (primary, one per screen), Refresh / Retry (secondary/outline) |
 | Segmented filter | `.segmented` + `aria-pressed` | Todas / Pending / Processing / Completed / Failed |
-| Table | `.tbl-wrap`, `table.tbl`, `table.stack` + `data-label` | Request list; stacked labeled rows ≤ 640 px; row hover `primary-soft` |
-| Badge | `.badge` + `.badge-{neutral\|informational\|normal\|critical}` | Status column |
+| Table | `.tbl-wrap`, `table.tbl`, `table.stack` + `data-label`, `td.nowrap` | Request list (reference + description, customer, service, status, updated); stacked labeled rows ≤ 640 px; codes never break at hyphens |
+| Badge | `.badge` + `.badge-{pending\|processing\|completed\|failed}` | Status column (tones per §4) |
 | Alert | `.alert` + `.alert-{normal\|informational\|warning\|error}` | Submit feedback, load error |
 | States | `.state`, `.skel`, `.glyph` | Loading skeleton, empty, no results for filter (with "Ver todas"), error with retry |
 | Utilities | `.sr-only`, `.skip-link`, `:focus-visible` outline | Accessibility |
 
-Not used: sidebar navigation, KPI cards, queue, progress/steps, story/evidence, charts, search, card hover lift.
+Explanatory only (shown in the reference, not required in the app): lifecycle diagram (`.lifecycle`) and processing
+attempts (`.steps`, `dl.facts`) — the API does not expose attempts; they document Worker behavior visually.
 
 ## 6. Layout
 

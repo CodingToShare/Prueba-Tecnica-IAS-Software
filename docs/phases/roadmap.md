@@ -98,6 +98,13 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   requirements traceability matrix (`docs/requirements-traceability.md`), delivery checklist (above), assumptions /
   open-decisions registers, and the decision format required by challenge §6 (alternatives + risks were missing).
   Not adopted: ADR directory, per-phase documents, OpenAPI file, Playwright/axe, Compose/CI, product/AI docs of the other domain.
+- **Follow-up 3 (design decision, owner request):** the reference HTML was rewritten as the Portal de Solicitudes
+  edition of v3 — same tokens/patterns; content now shows this product: brand bar, request form, segmented status
+  filter, request table, lifecycle (Completed terminal), background processing with transient retries, colors mapped
+  to request states, submit-outcome alerts (201/200/409/400/network) and view states; energy content, KPIs, charts,
+  queue and sidebar removed; "Cambios respecto a la v3 original" section added. Validation: headless Edge renders at
+  1440/768/390 px reviewed (fixed: codes wrapping at hyphens, stacked reference cell); tag balance, unique ids and
+  CSS variables checked by script. Contract, skill, AGENTS.md, project context and TD-13 updated accordingly.
 
 ## Unfinished Work Template
 

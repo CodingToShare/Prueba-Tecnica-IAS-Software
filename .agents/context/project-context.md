@@ -30,8 +30,8 @@ Also required: 3–5 lines on what would change with NoSQL; how the Worker becom
 ## Visual Language
 
 Contract: `docs/design/design-system.md` (skill `ui-design-system`); canonical visual reference:
-`docs/design/reference/design-system-v3.html` (design system v3 from a previous project; visual language only, its
-domain content is illustrative; never modified). Navy `#1E3A5F` primary, Plus Jakarta Sans, light surfaces, restrained
+`docs/design/reference/design-system-v3.html` (Portal de Solicitudes edition of design system v3: shows this portal's
+screen, request lifecycle, processing with retries, alerts and states; sample data illustrative). Navy `#1E3A5F` primary, Plus Jakarta Sans, light surfaces, restrained
 shadows, navy gradient only on the brand bar. Status tones: Pending → neutral, Processing → informational,
 Completed → normal, Failed → critical; badges carry color + text + shape. Validated at ~1440/768/390 px.
 

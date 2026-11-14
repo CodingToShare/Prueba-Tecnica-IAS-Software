@@ -134,12 +134,15 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Context:** A professional, consistent UI helps reviewers; time is limited. The author's design system v3 exists
   with an HTML reference and a contract.
 - **Alternatives:** unstyled HTML; a component library (MUI, Bootstrap).
-- **Decision:** keep `docs/design/reference/design-system-v3.html` unmodified as canonical visual reference and apply
-  its tokens/patterns through `docs/design/design-system.md` with plain CSS. Status mapping: Pending neutral,
-  Processing informational, Completed normal, Failed critical. Brand bar instead of sidebar (one screen).
-- **Trade-off:** The reference contains another domain's illustrative content; only its visual language applies.
+- **Decision:** adapt the v3 HTML reference into a **Portal de Solicitudes edition** (`docs/design/reference/design-system-v3.html`):
+  same tokens and patterns, content rewritten for this business (portal screen, lifecycle, processing with retries,
+  submit-outcome alerts, view states), and apply it through `docs/design/design-system.md` with plain CSS.
+  Status mapping: Pending neutral, Processing informational, Completed normal, Failed critical; warning for 409 and
+  transient retries. Brand bar instead of sidebar (one screen). Design decision recorded 2026-11-14 at the owner's request.
+- **Trade-off:** Reference and contract must be kept in sync manually.
 - **Risks:** Design polish eating Phase 04 time → contract limits the component set.
-- **Validation:** pending (Phase 04 review at 1440/768/390 px vs reference).
+- **Validation:** reference rendered in headless Edge at 1440, 768 and 390 px (no horizontal overflow; stacked table at
+  390 px); structure checked (balanced tags, unique ids, no undefined CSS variables). App validation pending (Phase 04).
 
 ### TD-14 — Built-in logging only
 

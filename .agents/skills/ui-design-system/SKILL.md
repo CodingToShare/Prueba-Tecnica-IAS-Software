@@ -26,8 +26,10 @@ and submit outcomes (201 normal, 200 informational, 409 warning, 400/5xx error).
 ## Required Rules
 
 - Tokens copied from the reference `:root` into `src/styles/tokens.css`; components use tokens only, no raw hex.
-- Reuse the reference CSS patterns (`.panel`, `.field`, `.btn-*`, `.spinner`, `.segmented`, `.tbl`/`.stack`, `.badge-*`,
-  `.alert-*`, `.state`, `.skel`, `.skip-link`, `:focus-visible`) — adapt, do not reinvent.
+- The reference already shows this product's screen: build the app to match its "Simulación — Portal de solicitudes".
+- Reuse the reference CSS patterns (`.brandbar`, `.panel`, `.field`/`.form-stack`, `.btn-*`, `.spinner`, `.segmented`,
+  `.tbl`/`.stack`/`td.nowrap`, `.badge-{pending|processing|completed|failed}`, `.alert-*`, `.state`, `.skel`,
+  `.skip-link`, `:focus-visible`) — copy and adapt, do not reinvent.
 - Badges keep color + text + shape (dashed ring / circle / diamond); color is never the only carrier.
 - `critical` (Failed state) and `destructive` (system errors) stay separate.
 - One primary action per screen: "Registrar solicitud".
@@ -40,7 +42,7 @@ and submit outcomes (201 normal, 200 informational, 409 warning, 400/5xx error).
 
 ## Prohibited
 
-Modifying the reference HTML; copying its domain content (meters, anomalies, KPIs, charts); component libraries or CSS
+Changing the reference HTML without a recorded design decision; hard-coding its illustrative sample data; component libraries or CSS
 frameworks; a second palette; gradients outside the brand bar; heavy shadows; gratuitous motion; navigation items the
 product does not need; exceeding the Phase 04 timebox for polish.
 

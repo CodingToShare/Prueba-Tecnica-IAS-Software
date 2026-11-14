@@ -11,7 +11,7 @@ Proportionality beats completeness of architecture.
 
 1. Original technical challenge (`Prueba_Tecnica_FullStack_DotNet_Candidato.pdf`, summarized in project context)
 2. `docs/technical-decisions.md`
-3. `docs/design/design-system.md` (visual contract) and `docs/design/reference/design-system-v3.html` (canonical visual reference, never modified) — UI only
+3. `docs/design/design-system.md` (visual contract) and `docs/design/reference/design-system-v3.html` (canonical visual reference of this portal; changes only by recorded design decision) — UI only
 4. `AGENTS.md` (this file)
 5. `.agents/context/project-context.md`
 6. Relevant `.agents/skills/*/SKILL.md`
@@ -88,7 +88,7 @@ No extra Domain/Application split.
 - **Persistence**: SQL Server via EF Core migrations; no string-built SQL; no secrets committed; connection string overridable by env vars.
 - **Worker/resilience**: separate Worker project; claim Pending → Processing → provider → Completed/Failed. Polly only around the provider, only for modeled transient failures, bounded retries. Single-instance assumption documented.
 - **Frontend**: React + TS (strict) + Vite, hooks + native `fetch`; create form, list, status filter; loading/empty/error/success states. No state libraries, no component library.
-- **Design**: follow `docs/design/design-system.md` and reuse the patterns of `docs/design/reference/design-system-v3.html` — navy `#1E3A5F`, Plus Jakarta Sans, reference tokens only, status badges with color + text + shape, `critical` ≠ `destructive`, visible focus, checked at ~1440/768/390 px. The reference's domain content is illustrative and never copied.
+- **Design**: follow `docs/design/design-system.md` and reuse the patterns of `docs/design/reference/design-system-v3.html` — navy `#1E3A5F`, Plus Jakarta Sans, reference tokens only, status badges with color + text + shape, `critical` ≠ `destructive`, visible focus, checked at ~1440/768/390 px. The reference shows this portal's screen; its sample data is illustrative and never hard-coded.
 - **Logging**: built-in `ILogger` with structured templates (`{ExternalReference}`, `{Status}`, `{Attempt}`); log state transitions, retries and failures; never log secrets, connection strings or full payloads. No metrics/tracing stack.
 - **Testing**: tests ship with each phase; prioritize state transitions, retry, idempotency, input validation; deterministic; descriptive scenario names; no hidden skips.
 - **Documentation**: describe only implemented behavior; mark pending items as pending; document a command only after it worked.
