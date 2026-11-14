@@ -24,7 +24,10 @@ Working in `frontend/service-requests-web`.
   (distinguish 201 created vs 200 existing replay vs 409 conflict).
 - Disable submit while sending (reduces accidental double submits; backend idempotency is still the guard).
 - Client-side `required`/`maxLength` mirror the API, but the server stays authoritative.
-- Plain CSS; accessible labels; no design-system work.
+- Visuals per `docs/design/design-system.md` via the `ui-design-system` skill: plain CSS, `src/styles/tokens.css`
+  as the single source of visual values, no extra design work beyond that contract.
+- TypeScript strict; no `any` as an escape hatch; API types mirror the backend DTOs.
+- Suggested structure: `src/api/` (client + types), `src/components/` (form, filter, table, badge, banner), `src/styles/`.
 
 ## Prohibited
 
@@ -36,3 +39,4 @@ Redux, Zustand, React Query, component libraries, routing for a single screen, h
 - [ ] Filter by status works
 - [ ] Loading / empty / error / success visible
 - [ ] `npm run build` passes (type-check included)
+- [ ] `ui-design-system` checklist completed (tokens, widths, keyboard)

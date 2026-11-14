@@ -33,8 +33,12 @@ loop (configurable interval) → fetch Pending batch
 - New DI scope per iteration for DbContext.
 - Host built with `Host.CreateApplicationBuilder` + `AddWindowsService()` so it can run as a Windows Service;
   `dotnet run` for the demo. Document `sc.exe create` / publish steps in README.
-- Single-instance assumption documented; requests stuck in Processing after a crash are a documented limitation
-  (recovery strategy = future evolution).
+- Startup recovery (adapted from the reference's "recover orphaned runs at startup"): with the single-instance
+  assumption, requests found in `Processing` when the Worker starts were orphaned by a crash and are resumed —
+  safe because the provider is idempotent by `externalReference`. If cut for time, document it as a limitation.
+- Single-instance assumption documented; multi-instance needs an atomic claim and lease timeout (future evolution).
+- Structured logs via `ILogger`: claim, each retry (`{Attempt}`), final outcome, with `{ExternalReference}`;
+  no payloads or secrets.
 
 ## Prohibited
 

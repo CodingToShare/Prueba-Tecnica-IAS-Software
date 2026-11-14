@@ -27,6 +27,9 @@ Working on `ServiceRequests.Api` or the use-case services in `ServiceRequests.Co
 - `async`/`await` end to end; pass `CancellationToken` to every EF Core / provider call.
 - Configuration via `appsettings.json` + environment variables; no secrets in source. CORS limited to the frontend dev origin.
 - Response enum values serialized as strings.
+- Configuration validated at startup (fail fast on missing connection string / invalid options).
+- Structured `ILogger` logging for create outcomes (created / replayed / conflict) with `{ExternalReference}`;
+  unexpected exceptions logged server-side once, returned as generic 500 ProblemDetails.
 
 ## Prohibited
 

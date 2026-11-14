@@ -27,6 +27,14 @@ Also required: 3–5 lines on what would change with NoSQL; how the Worker becom
 - Frontend: React + TypeScript + Vite, native `fetch`, hooks.
 - Tests: xUnit, Moq, `TheoryData`, `MemberData`.
 
+## Visual Language
+
+Contract: `docs/design/design-system.md` (skill `ui-design-system`). Navy `#1E3A5F` primary, Plus Jakarta Sans,
+light surfaces, restrained shadows, gradient only in the header, semantic CSS tokens for request status and submit
+feedback, status shown with text + glyph (never color only), visible focus, validated at ~1440/768/390 px.
+Adapted from a previous project's design system v3; its HTML reference was not available, so non-brand token values
+are derived (documented assumption).
+
 ## Repository Target
 
 ```text
@@ -34,6 +42,9 @@ ServiceRequests.sln
 src/ServiceRequests.Core | .Infrastructure | .Api | .Worker
 tests/ServiceRequests.Tests
 frontend/service-requests-web
+docs/design/design-system.md     visual contract
+docs/technical-decisions.md      decision log
+docs/phases/roadmap.md           phases, status, evidence
 ```
 
 Dependencies: Api/Worker → Infrastructure → Core. Core stays free of EF Core/ASP.NET/Polly.
@@ -74,6 +85,8 @@ poll → find Pending → MarkProcessing + persist (claim)
 ```
 
 Single Worker instance assumed; multiple workers would need an atomic claim (e.g. conditional UPDATE / rowversion).
+Planned: on startup the Worker resumes requests left in `Processing` by a crash (safe because the provider is idempotent
+by `externalReference`); if cut for time, it is documented as a limitation.
 Hosted so it can run via `UseWindowsService()`; manual `dotnet run` demonstrates the flow.
 
 ## Deliberate Non-Goals

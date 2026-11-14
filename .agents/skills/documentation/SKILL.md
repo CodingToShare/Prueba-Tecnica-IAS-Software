@@ -22,8 +22,16 @@ Updating `README.md`, `docs/technical-decisions.md`, the roadmap evidence, or wr
 - **AI note**: what AI was used for, how output was verified, what was corrected or rejected. No sensitive data.
 - **Deferred work**: current state · reason · risk · next concrete step.
 
+**README outline:** what it is (1 paragraph) · architecture at a glance (diagram) · prerequisites · run
+(database → API → Worker → frontend) · tests table (suite / command / needs / scenarios) · key decisions (links to
+`technical-decisions.md`) · Windows Service · NoSQL alternative · assumptions · known limitations · legacy review · AI usage.
+
 ## Required Rules
 
+- Keep categories explicit: REQUIREMENT (from the challenge), TECHNICAL DECISION, ASSUMPTION, OPEN DECISION,
+  OUT OF SCOPE. Never promote an assumption to a requirement silently.
+- Resolving an open decision records the decision, rationale and date, and updates dependent documents.
+- Decisions belong to the project: AI tooling is disclosed only in the AI usage note, not attributed elsewhere.
 - Document only what exists and was validated; mark the rest as pending.
 - Brief and verifiable: commands a reviewer can copy and run.
 - No machine-specific paths or secrets.

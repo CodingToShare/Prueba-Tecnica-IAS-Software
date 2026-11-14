@@ -11,10 +11,11 @@ Proportionality beats completeness of architecture.
 
 1. Original technical challenge (`Prueba_Tecnica_FullStack_DotNet_Candidato.pdf`, summarized in project context)
 2. `docs/technical-decisions.md`
-3. `AGENTS.md` (this file)
-4. `.agents/context/project-context.md`
-5. Relevant `.agents/skills/*/SKILL.md`
-6. Existing implementation
+3. `docs/design/design-system.md` (visual contract — UI only)
+4. `AGENTS.md` (this file)
+5. `.agents/context/project-context.md`
+6. Relevant `.agents/skills/*/SKILL.md`
+7. Existing implementation
 
 Existing code never overrides a challenge requirement or an accepted decision.
 Changing an accepted decision requires a new entry in `docs/technical-decisions.md`, never a silent replacement.
@@ -48,6 +49,7 @@ Finishing a phase never authorizes the next one. Details: `phase-governance` ski
 | Entity mapping, migrations, constraints, queries | `sqlserver-efcore` |
 | Worker, provider boundary, Polly, Windows Service | `worker-resilience` |
 | React UI, form, list, filter, fetch client | `react-frontend` |
+| Visual language, tokens, UI states, responsive/accessibility | `ui-design-system` + `docs/design/design-system.md` |
 | Tests at any level | `testing` |
 | Final diff review | `code-review` |
 | README, decisions, assumptions, legacy review, AI note | `documentation` |
@@ -84,9 +86,18 @@ No extra Domain/Application split.
 - **State**: no public status setter. Transitions via `MarkProcessing()`, `Complete()`, `Fail(...)`. `Completed` is terminal.
 - **Persistence**: SQL Server via EF Core migrations; no string-built SQL; no secrets committed; connection string overridable by env vars.
 - **Worker/resilience**: separate Worker project; claim Pending → Processing → provider → Completed/Failed. Polly only around the provider, only for modeled transient failures, bounded retries. Single-instance assumption documented.
-- **Frontend**: React + TS + Vite, hooks + native `fetch`; create form, list, status filter; loading/empty/error/success states. No state libraries, no component library.
-- **Testing**: tests ship with each phase; prioritize state transitions, retry, idempotency, input validation; deterministic.
-- **Documentation**: describe only implemented behavior; mark pending items as pending.
+- **Frontend**: React + TS (strict) + Vite, hooks + native `fetch`; create form, list, status filter; loading/empty/error/success states. No state libraries, no component library.
+- **Design**: follow `docs/design/design-system.md` — navy `#1E3A5F`, Plus Jakarta Sans, semantic CSS tokens only, status never by color alone, visible focus, checked at ~1440/768/390 px.
+- **Logging**: built-in `ILogger` with structured templates (`{ExternalReference}`, `{Status}`, `{Attempt}`); log state transitions, retries and failures; never log secrets, connection strings or full payloads. No metrics/tracing stack.
+- **Testing**: tests ship with each phase; prioritize state transitions, retry, idempotency, input validation; deterministic; descriptive scenario names; no hidden skips.
+- **Documentation**: describe only implemented behavior; mark pending items as pending; document a command only after it worked.
+
+## 5.1 Security And Configuration
+
+- No secrets, credentials or personal data in the repository; committed config contains only safe local defaults or placeholders.
+- Validate all external input at the API boundary; parameterized data access only (EF Core LINQ).
+- Never expose stack traces, SQL errors or internal exception messages to clients.
+- Pin dependency versions when they are first introduced, not before.
 
 ## 6. Git Rules
 
@@ -95,6 +106,7 @@ No extra Domain/Application split.
 - Conventional Commit subject + body starting `Phase NN:`.
 - **No assistant attribution** in commits (no `Co-Authored-By` Claude/Anthropic, no "Generated with"), regardless of tool defaults. AI usage is disclosed in the docs instead.
 - Before commit: `git status`, `git diff --check`, `git diff`. After: `git log -1 --format=%B`.
+- `AGENTS.md`, `CLAUDE.md` and `.agents/` are tracked shared governance; per-user tool state (e.g. `.claude/settings.local.json`) is ignored.
 
 ## 7. Explicit Non-Goals
 
@@ -108,5 +120,6 @@ Absence is deliberate: technology is chosen only when it solves a real problem i
 - Authorized scope implemented; nothing pulled forward from later phases.
 - Builds pass; focused tests and relevant regression pass (or failure reported honestly).
 - Actual diff reviewed; no secrets, no dead scaffolding, no unjustified dependency.
+- UI changes validated against the design contract (widths, states, keyboard).
 - Roadmap status + evidence updated; docs claim only what exists.
 - One local checkpoint commit (when authorized); then STOP.

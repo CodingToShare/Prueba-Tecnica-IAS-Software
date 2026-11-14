@@ -22,7 +22,10 @@ Review `git diff` (staged + unstaged) against the challenge and accepted decisio
 - Persistence (migrations, indexes, no string-built SQL)
 - Unnecessary abstractions or dependencies
 - Missing tests for risky behavior
-- Frontend states (loading/empty/error/success)
+- Frontend states (loading/empty/error/success) and design contract (tokens only, status not by color alone,
+  focus visible, responsive)
+- Logs: useful context, no secrets or payloads
+- Docs and roadmap evidence reflect only what was actually run
 
 ## Required Rules
 

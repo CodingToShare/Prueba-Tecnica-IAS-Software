@@ -31,6 +31,8 @@ Only the explicitly authorized phase runs, on a verified baseline, inside its sc
 
 **Exit gate**
 - Build, focused tests, relevant regression; mark checks N/A only with a reason.
+- UI phases: design validation against `docs/design/design-system.md` (widths, states, keyboard).
+- A phase with a known blocking failure is not Complete. Never a subject-only checkpoint commit.
 - Review the actual diff (`code-review` skill for later phases).
 - Update roadmap status + evidence (commands run, results). Never fabricate elapsed times.
 - Commit (when authorized): Conventional Commit subject, blank line, body starting `Phase NN:`.

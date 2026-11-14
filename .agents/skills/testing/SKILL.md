@@ -28,6 +28,12 @@ Risk-ordered coverage:
   and note that the EF InMemory provider does not enforce unique indexes.
 - Use `TheoryData`/`MemberData` where they improve readability, not by obligation.
 - Each phase: focused tests for new code + full `dotnet test` regression.
+- Descriptive names stating condition and expected outcome (e.g. `Complete_WhenAlreadyCompleted_Throws`).
+- Inject time (`TimeProvider`) where timestamps matter in assertions.
+- No hidden skipped tests: every skip is listed with a reason.
+- No fake evidence: report only commands actually run after the final change.
+- Frontend: no test framework added for the challenge; validated by `npm run build` (strict type-check) + manual
+  smoke following the design contract (documented trade-off).
 
 ## Prohibited
 

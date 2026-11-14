@@ -86,6 +86,8 @@ Format: Context · Decision · Why · Trade-off · Future evolution · Evidence.
 - **Decision:** One Worker instance; claim by persisting `Processing` before calling the provider.
 - **Why:** Simple and correct for one instance.
 - **Trade-off:** Multiple instances could double-claim; a crash can leave requests in `Processing`.
+- **Mitigation (planned, Phase 03):** on startup the Worker resumes requests left in `Processing`; safe with one instance
+  because the provider is idempotent by `externalReference` (TD-10). If cut for time, documented as a limitation.
 - **Future evolution:** Atomic claim (conditional UPDATE / rowversion), lease timeout to recover stuck requests.
 - **Evidence:** pending.
 
@@ -113,4 +115,25 @@ Format: Context · Decision · Why · Trade-off · Future evolution · Evidence.
 - **Context:** Limited time; the costliest bugs are duplicate effects and illegal state changes.
 - **Decision:** xUnit + Moq on state transitions, retry behavior, idempotency, input validation; written with each phase.
 - **Trade-off:** No E2E/UI tests; frontend validated by build + manual smoke.
+- **Evidence:** pending.
+
+## TD-13 — Visual language adapted from an existing design system
+
+- **Context:** The challenge asks for a minimal UI; a professional, consistent look helps reviewers, but time is limited.
+  A previous project's design system v3 (navy `#1E3A5F`, Plus Jakarta Sans, semantic tokens, accessibility rules) was
+  available only as rules — its HTML reference and full contract were not included.
+- **Decision:** Reuse its visual language through a small contract (`docs/design/design-system.md`): CSS custom
+  properties, request-status and submit-feedback semantic tokens, a handful of primitives, plain CSS.
+- **Why:** Consistency and accessibility at near-zero cost; no component library or CSS framework needed.
+- **Trade-off:** Non-brand token values are derived (assumption), not copied from the canonical reference.
+- **Future evolution:** Align values with the original HTML reference if provided; extract a shared stylesheet if more screens appear.
+- **Evidence:** pending (Phase 04).
+
+## TD-14 — Built-in logging only
+
+- **Context:** Background processing and retries must be diagnosable; observability platforms are out of scope.
+- **Decision:** `Microsoft.Extensions.Logging` with structured message templates; no Serilog, metrics or tracing.
+- **Why:** Enough to follow a request through API → Worker → provider; zero extra dependencies.
+- **Trade-off:** No dashboards/alerts; console output only.
+- **Future evolution:** Windows Event Log provider when hosted as a Windows Service; OpenTelemetry if operated at scale.
 - **Evidence:** pending.

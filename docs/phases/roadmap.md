@@ -19,7 +19,8 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 
 ## Phase Scopes
 
-**00 — Governance.** AGENTS.md, CLAUDE.md, project context, 9 skills, roadmap, technical decisions, .gitignore. No product code.
+**00 — Governance.** AGENTS.md, CLAUDE.md, project context, 10 skills (incl. `ui-design-system`), design contract,
+roadmap, technical decisions, .gitignore. No product code.
 
 **01 — Foundation + persistence.** Solution + 4 src projects + test project; project references; `ServiceRequest` entity
 with guarded transitions (+ transition tests); DbContext, mapping, UNIQUE `ExternalReference`, `Status` index; initial
@@ -30,9 +31,11 @@ unique-violation race handling, CORS for frontend dev origin; idempotency + vali
 
 **03 — Worker + resilience.** Provider interface + idempotent simulated provider with configurable transient failures;
 processor (claim → provider → Completed/Failed); Polly bounded retry on transient only; BackgroundService host with
-Windows Service support; retry/exhaustion tests.
+Windows Service support; startup resume of orphaned `Processing` requests; structured logs; retry/exhaustion tests.
 
-**04 — React portal.** Vite React TS app; create form; list; status filter; loading/empty/error/success; build passes.
+**04 — React portal.** Vite React TS app styled per `docs/design/design-system.md` (tokens.css, header, form card,
+filter, table, status badges, feedback banners); loading/empty/error/success; build passes; design validation at
+~1440/768/390 px + keyboard pass.
 
 **05 — Test hardening.** Fill gaps in highest-risk scenarios (TheoryData/MemberData where readable); full regression.
 
@@ -61,6 +64,14 @@ final diff review, delivery commit.
 - Files: AGENTS.md, CLAUDE.md, `.agents/context/project-context.md`, 9 skills, this roadmap, `docs/technical-decisions.md`, `.gitignore`.
 - Validation: `git diff --check` clean; actual staged diff reviewed; no application code or dependencies introduced.
 - Timing: see Phase 00 commit timestamp.
+- **Follow-up (user review):** the design part of the reference `.agents` was missing. Added the `ui-design-system`
+  skill and `docs/design/design-system.md` (navy `#1E3A5F`, Plus Jakarta Sans, semantic tokens, states, responsive
+  and accessibility rules). The reference's HTML design file was not in the zip — non-brand tokens are derived (TD-13).
+  Also adapted from the reference: structured logging rules (TD-14), Worker startup recovery of orphaned `Processing`
+  requests (TD-09), testing hygiene (descriptive names, no hidden skips, no fake evidence, `TimeProvider`),
+  documentation categories + README outline, security/config rules, dependency pinning, tracked-governance rule.
+  Discarded as not applicable: Go/PostgreSQL/Next.js/TanStack/ECharts specifics, analytics/LLM skills, Docker, CI,
+  Prometheus metrics, Copilot entry file.
 
 ## Unfinished Work Template
 

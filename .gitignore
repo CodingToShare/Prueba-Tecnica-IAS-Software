@@ -28,6 +28,9 @@ coverage/
 *.coverage
 *.trx
 
+# Per-user agent/tool state (shared governance in AGENTS.md / .agents/ stays tracked)
+.claude/settings.local.json
+
 # OS
 Thumbs.db
 .DS_Store
