@@ -16,7 +16,7 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 01.3 | Unit, integration and functional validation | 5 min | Complete |
 | 02 | Idempotent API | 22 min | In Progress |
 | 02.1 | Development | 10 min | Complete |
-| 02.2 | Technical/requirements review | 4 min | Not Started |
+| 02.2 | Technical/requirements review | 4 min | Complete |
 | 02.3 | Automated + functional tests | 6 min | Not Started |
 | 02.4 | Documentation/evidence | 2 min | Not Started |
 | 03 | Background processing and resilience | 20 min | Not Started |
@@ -255,6 +255,33 @@ Every item has a command or a place to look; record results in Phase 07 evidence
 - Open findings: `AddRequestTimestamps` gives rows that existed before it `0001-01-01` timestamps (no such rows in any
   database here) · DTO `[StringLength]` measures the untrimmed value · 500 path not yet exercised (02.3).
 - Timing: see Phase 02.1 commit timestamp.
+
+### Phase 02.2 — Complete (review gate; Phase 02 In Progress)
+
+- Baseline: `dotnet build` 0 warnings/0 errors; `dotnet test` 43/43.
+- Code review (actual files): one equivalence rule (`CompareWithExisting` → `HasEquivalentPayload`) used on the first
+  lookup and after the UNIQUE race; `SqlException`/2601/2627 only in Infrastructure; `CancellationToken` flows
+  controller → service → repository → EF; no case-folding for identity (the only `IgnoreCase` parses the status
+  filter); request DTO has no id/status/timestamp fields; `InitialCreate` last changed in `27b5112` (Phase 01.1).
+- Idempotency challenge (API on LocalDB, Development): new `REVIEW-…` → 201; identical replay → 200; lower-cased
+  reference → 200; lower-cased reference + `cust-01` → 409; changed ServiceCode → 409; changed Description → 409;
+  `sqlcmd`: one row, original payload unchanged. 12 concurrent POSTs of a new reference → 1×201, 11×200, one row
+  (the burst did not reach the UNIQUE-race branch; deterministic race test required in 02.3).
+- Collation: `SQL_Latin1_General_CP1_CI_AS`; EF sends `WHERE [s].[ExternalReference] = @externalReference`
+  (`nvarchar(100)`, value not logged); `SHOWPLAN_TEXT` for a different-case lookup → Index Seek on
+  `UX_ServiceRequests_ExternalReference`.
+- Errors (unreachable server via `ConnectionStrings__ServiceRequests`, Development): GET → 500 ProblemDetails with
+  only type/title/status/traceId (JSON and HTML requests; no stack, SQL or host); exception logged server-side;
+  unknown route → 404 ProblemDetails; malformed JSON → 400 ValidationProblemDetails.
+- Findings: no BLOCKER/HIGH/MEDIUM. LOW (fixed): `[StringLength]` measured untrimmed values, so a padded value that
+  fits after trimming got 400 → request DTO now trims in `init` accessors before validation; smoke: padded 100-char
+  reference → 201 stored with length 100, 101 chars → 400, blank/null → 400.
+- Notes (deferred): UNIQUE-race branch not yet exercised (02.3) · when that branch runs, EF Core may log the handled
+  `DbUpdateException` at Error level — confirm in 02.3 and decide if it needs filtering · malformed-JSON 400 includes
+  the framework parser message (no internals) · `?status=` empty means no filter · no pagination by decision ·
+  `AddRequestTimestamps` default for pre-existing rows (none exist).
+- Smoke/review rows deleted from `ServiceRequestsDb` afterwards.
+- Timing: see Phase 02.2 commit timestamp.
 
 ## Unfinished Work Template
 

@@ -221,7 +221,8 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
   not define case-insensitive business values).
 - **Risks:** moving to a case-sensitive collation would change identity → covered by documenting the dependency.
 - **Validation:** Phase 02.1 — OD-02 unit matrix passes; smoke: lower-cased padded reference → 200, `customerId`
-  case change → 409. API/race tests pending 02.3.
+  case change → 409. Phase 02.2 — all six challenge cases behave as specified; different-case lookup uses an Index
+  Seek on `UX_ServiceRequests_ExternalReference`. API/race tests pending 02.3.
 
 ---
 
