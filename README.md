@@ -5,16 +5,22 @@ background against an external provider. Users retry when the portal feels slow 
 so the same business operation (`externalReference`) must never create duplicate effects, and a `Completed`
 request never moves back.
 
-> **Status:** Phases 00–03 complete — domain, SQL Server persistence, idempotent HTTP API and the background Worker
-> (retries, startup recovery, Windows Service ready) are implemented and tested. The React portal (Phase 04) is
-> **not implemented yet**. Progress and evidence: [`docs/phases/roadmap.md`](docs/phases/roadmap.md).
+> **Status:** Phases 00–04 complete — domain, SQL Server persistence, idempotent HTTP API, background Worker (retries,
+> startup recovery, Windows Service ready) and the React portal are implemented and validated. Progress and evidence:
+> [`docs/phases/roadmap.md`](docs/phases/roadmap.md).
 
 ## Architecture
 
 ```text
-[React + TS (Vite) — Phase 04, pending] --HTTP--> ASP.NET Core Web API --> ServiceRequests.Core
-                                                                       |--> EF Core / SQL Server
-                                     .NET Worker (BackgroundService) --+--> Polly retry --> simulated provider
+React + TS portal (Vite, :5173)
+        │  fetch  POST /api/requests · GET /api/requests[?status=]
+        ▼
+ASP.NET Core Web API (:5164) ──► ServiceRequests.Core ──► EF Core ──► SQL Server (LocalDB)
+                                                                        ▲
+.NET Worker (BackgroundService) ── claim / complete / fail ─────────────┘
+        │
+        ▼
+Polly retry (transient only) ──► simulated external provider
 ```
 
 | Project | Responsibility |
@@ -24,6 +30,7 @@ request never moves back.
 | `src/ServiceRequests.Api` | Controller, DTOs, ProblemDetails, CORS. |
 | `src/ServiceRequests.Worker` | `RequestProcessingWorker` (hosted loop), `ServiceRequestProcessor`, Polly pipeline, Windows Service hosting. |
 | `tests/ServiceRequests.Tests` | xUnit + Moq unit tests, LocalDB integration tests, functional HTTP and Worker tests. |
+| `frontend/service-requests-web` | React + TypeScript + Vite portal: native `fetch`, hooks, plain CSS from the design tokens. |
 
 Dependencies point inward: Api/Worker → Infrastructure → Core. Decisions: [`docs/technical-decisions.md`](docs/technical-decisions.md).
 
@@ -32,32 +39,59 @@ Dependencies point inward: Api/Worker → Infrastructure → Core. Decisions: [`
 - .NET 10 SDK (validated with 10.0.404) — the solution is driven from the .NET CLI.
 - SQL Server LocalDB (`MSSQLLocalDB`, validated with SQL Server 2019 LocalDB) or another SQL Server reachable with a
   connection string.
-- Git. No Docker, cloud services or Node.js are needed for the current backend.
+- Node.js and npm for the portal (validated with Node 24.21 and npm 11.19).
+- Git. No Docker or cloud services are needed.
 
-## Database initialization
+## Run the full stack locally
 
-Explicit EF Core migrations (TD-16); neither the API nor the Worker migrates the database on startup. From the
-repository root:
+From the repository root (Windows; one terminal per process):
 
 ```bash
+# 1. .NET tools and packages
 dotnet tool restore
-dotnet ef database update --project src/ServiceRequests.Infrastructure --startup-project src/ServiceRequests.Api
-```
-
-This creates `ServiceRequestsDb` on `(localdb)\MSSQLLocalDB` with the migrations `InitialCreate` and
-`AddRequestTimestamps` (UNIQUE index on `ExternalReference`, index on `Status`).
-
-## Build, run and test
-
-```bash
 dotnet restore
-dotnet build ServiceRequests.sln
-dotnet run --project src/ServiceRequests.Api        # terminal 1 — http://localhost:5164 (launch profile "http")
-dotnet run --project src/ServiceRequests.Worker     # terminal 2 — processes Pending requests
-dotnet test ServiceRequests.sln
+
+# 2. Database — explicit EF Core migrations (TD-16); the API and Worker never migrate on startup
+dotnet ef database update --project src/ServiceRequests.Infrastructure --startup-project src/ServiceRequests.Api
+
+# 3. API — terminal 1, http://localhost:5164 (launch profile "http")
+dotnet run --project src/ServiceRequests.Api
+
+# 4. Worker — terminal 2, processes Pending requests
+dotnet run --project src/ServiceRequests.Worker
+
+# 5. Portal — terminal 3
+cd frontend/service-requests-web
+npm ci
+cp .env.example .env.local        # VITE_API_BASE_URL=http://localhost:5164
+npm run dev                       # http://localhost:5173
 ```
 
-Walkthrough with both processes running (default configuration):
+Open **http://localhost:5173**. Step 2 creates `ServiceRequestsDb` on `(localdb)\MSSQLLocalDB` with the migrations
+`InitialCreate` and `AddRequestTimestamps` (UNIQUE index on `ExternalReference`, index on `Status`). The API allows the
+portal origin `http://localhost:5173` (CORS). `VITE_API_BASE_URL` is public browser configuration — never put secrets
+in it; `.env.local` is ignored by Git.
+
+### Reviewer demo (in the portal)
+
+1. Register `REQ-1` / `CUS-1042` / `MANT-PREV` / any description → green "Solicitud registrada · 201 Created"; the
+   row moves Pending → Processing → Completed by itself (the list refreshes every 3 s).
+2. Submit exactly the same data again → blue "Ya existía una solicitud… no se creó un duplicado · 200 OK"; still one
+   row (also with `req-1` in lower case: same identity).
+3. Same reference with another customer → amber "ya existe con datos diferentes · 409 Conflict"; the form keeps your
+   input and the stored request is unchanged.
+4. Register a request with service code `UNSUPPORTED` → it ends **Failed** (permanent provider failure, no retry).
+5. Use the filter (Todas / Pending / Processing / Completed / Failed) — each option queries the API with `?status=`.
+
+With the default Worker settings a request completes in about a second (one simulated transient failure, a 200 ms
+retry), so Pending/Processing can be brief. To watch them, start the Worker with slower settings (validated in 04.3):
+
+```powershell
+$env:Worker__PollingIntervalMilliseconds = "5000"; $env:Worker__RetryDelayMilliseconds = "5000"
+dotnet run --project src/ServiceRequests.Worker
+```
+
+API-only walkthrough (both processes running):
 
 ```bash
 curl -s -H "Content-Type: application/json" http://localhost:5164/api/requests \
@@ -66,7 +100,14 @@ curl -s "http://localhost:5164/api/requests?status=Completed"     # REQ-1 appear
 ```
 
 The Worker log shows the claim, one transient failure (`attempt 1`) and `Completed REQ-1 after 2 attempt(s)`.
-A request with `"serviceCode":"UNSUPPORTED"` ends `Failed` after one call.
+
+## Tests and build verification
+
+```bash
+dotnet build ServiceRequests.sln
+dotnet test ServiceRequests.sln                       # backend: unit, LocalDB integration, functional
+cd frontend/service-requests-web && npm run build && npm run lint   # strict TypeScript + Vite build, oxlint
+```
 
 | Suite | Needs | Covers |
 | --- | --- | --- |
@@ -77,6 +118,24 @@ A request with `"serviceCode":"UNSUPPORTED"` ends `Failed` after one call.
 Persistence, HTTP and Worker tests create throwaway databases `ServiceRequestsDb_Tests_<guid>` from the migrations and
 drop them afterwards. To use another SQL Server, set `SERVICEREQUESTS_TEST_SQLSERVER` to a connection string without a
 database name. Last validated run: 100 passed, 0 failed, 0 skipped.
+
+The portal has no automated UI test suite by design for this timed challenge (TD-12): it is validated by the strict
+production build, oxlint and real-browser acceptance against the real API, SQL Server and Worker (create, replay, 409,
+validation, filter, Failed, API outage and recovery, automatic refresh) plus review at 1440 / 768 / 390 px against the
+design reference — see the Phase 04.3 evidence in the roadmap.
+
+## Portal
+
+- One screen per the design contract ([`docs/design/design-system.md`](docs/design/design-system.md)) and its
+  reference: navy brand bar, "Nueva solicitud" form, "Solicitudes" table with a status filter; two columns from 980 px,
+  stacked below, labeled rows at ≤ 640 px.
+- Feedback by API result: 201 normal (green), 200 replay informational (blue), 409 warning (amber), 400 field errors,
+  network/5xx generic error with "Reintentar" (server details are never shown).
+- Status badges use color + text + shape (Pending dashed ring, Processing/Completed circle, Failed diamond in the
+  `critical` tone, never the system-error red).
+- "Actualizada" shows the server `updatedAt` (es-CO format; full timestamp on hover).
+- Accessibility: skip link, labels, `aria-invalid`/`aria-describedby`, `aria-pressed` filter, visible focus,
+  `prefers-reduced-motion`.
 
 ## API
 
@@ -168,12 +227,13 @@ ServiceRequestsWorker`.
 | Key | Used by | Default (`appsettings.json`) |
 | --- | --- | --- |
 | `ConnectionStrings:ServiceRequests` | API, Worker | `Server=(localdb)\MSSQLLocalDB;Database=ServiceRequestsDb;Trusted_Connection=True` — override with `ConnectionStrings__ServiceRequests`; startup fails if missing |
-| `Cors:AllowedOrigins` | API | `["http://localhost:5173"]` (planned Vite dev server; GET/POST, `Content-Type`) |
+| `Cors:AllowedOrigins` | API | `["http://localhost:5173"]` (Vite dev server; GET/POST, `Content-Type`) |
 | `Worker:PollingIntervalMilliseconds` | Worker | `1000` (allowed 100–60000) |
 | `Worker:MaxRetryAttempts` | Worker | `2` retries → 3 calls (allowed 1–5) |
 | `Worker:RetryDelayMilliseconds` | Worker | `200` (allowed 0–10000) |
 | `ExternalProvider:TransientFailuresBeforeSuccess` | Worker | `1` (allowed 0–10) |
 | `ExternalProvider:PermanentFailureServiceCodes` | Worker | `["UNSUPPORTED"]` |
+| `VITE_API_BASE_URL` | Portal (`.env.local`, from `.env.example`) | `http://localhost:5164`; if unset, the page origin is used. Public value, never a secret |
 
 Worker settings are validated on startup. No secrets are committed; LocalDB uses Windows authentication. EF Core SQL
 command logs are kept at `Warning` in both hosts.
@@ -185,12 +245,14 @@ command logs are kept at `Warning` in both hosts.
 | Domain, persistence, migrations | Done and tested (Phase 01) |
 | Idempotent API | Done and tested (Phase 02) |
 | Worker, simulated provider, Polly retries, startup recovery, Windows Service readiness | Done and tested (Phase 03); service registration documented, not executed |
-| React portal | Pending — Phase 04 (design contract: [`docs/design/design-system.md`](docs/design/design-system.md)) |
+| React portal | Done and validated in a real browser (Phase 04); no automated UI suite (TD-12) |
+| Critical test hardening | Pending — Phase 05 |
 | NoSQL alternative note, legacy code review, final README | Pending — Phase 06 |
 
-Known items: a handled concurrent-insert race is logged by EF Core at Error level (Phase 05); rows created before
-`AddRequestTimestamps` would get `0001-01-01` timestamps (no such rows exist); simulated provider state is not durable;
-single Worker instance only. Traceability: [`docs/requirements-traceability.md`](docs/requirements-traceability.md).
+Known items: a handled concurrent-insert race is logged by EF Core at Error level (review in Phase 05); rows created
+before `AddRequestTimestamps` would get `0001-01-01` timestamps (no such rows exist); a request hit by an unexpected
+Worker error stays Processing until the next Worker start; simulated provider state is not durable across restarts;
+single Worker instance only; the portal refreshes every 3 s (status changes appear with up to that delay). Traceability: [`docs/requirements-traceability.md`](docs/requirements-traceability.md).
 
 ## AI usage
 

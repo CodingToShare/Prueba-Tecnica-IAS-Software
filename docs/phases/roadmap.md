@@ -24,11 +24,11 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 03.2 | Technical/resilience review | 3 min | Complete |
 | 03.3 | Automated + functional validation | 6 min | Complete |
 | 03.4 | Documentation/evidence | 2 min | Complete |
-| 04 | React portal | 18 min | In Progress |
+| 04 | React portal | 18 min | Complete |
 | 04.1 | Development | 8 min | Complete |
 | 04.2 | UX / architecture / contract review | 3 min | Complete |
 | 04.3 | Build + functional + visual validation | 5 min | Complete |
-| 04.4 | Documentation / evidence / AI | 2 min | Not Started |
+| 04.4 | Documentation / evidence / AI | 2 min | Complete |
 | 05 | Critical test hardening | 12 min | Not Started |
 | 06 | Documentation and legacy review | 10 min | Not Started |
 | 07 | Final validation and delivery | 5 min | Not Started |
@@ -584,6 +584,28 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   process name).
 - Corrections: none to product code.
 - Timing: see Phase 04.3 commit timestamp.
+
+### Phase 04.4 — Complete → Phase 04 Complete
+
+- README: full local run (tools, database, API :5164, Worker, portal :5173 with `npm ci`, `.env.local` from
+  `.env.example`, `npm run dev`), reviewer demo (201 → Completed, 200 replay, 409, `UNSUPPORTED` → Failed, filter),
+  optional slower Worker settings to watch Pending/Processing, tests/build commands, portal summary, updated
+  architecture, configuration (`VITE_API_BASE_URL` public), status table and known items.
+- Executed for the README: `cp .env.example .env.local` + `npm run dev` → served on http://localhost:5173 with
+  `VITE_API_BASE_URL` = `http://localhost:5164` injected (transformed module checked); `.env.local` ignored by Git and
+  removed. Other commands were executed in 02.4, 03.4 and 04.3.
+- Decisions: TD-02 (React, native fetch, local state, plain CSS, server filtering, `updatedAt`, TD-21 refresh) and
+  TD-12 (frontend validation strategy and its challenge-specific reason) updated.
+- Traceability: D-02 Verified (all four run paths documented and executed); D-03 updated (hardening pending 05).
+- Open findings (unchanged): `AddRequestTimestamps` historical backfill limitation; EF Error log on a handled UNIQUE
+  race (Phase 05); unexpected Worker error waits for the next start; simulated provider state not durable. Closed:
+  StringLength before trim (02.2), HTTP 500 regression (03.3). Screenshots from 04.3 stay outside the repository.
+- **Phase 04 summary:** portal build/lint green; real-browser acceptance of 201/200/409/400/filter/Failed/outage
+  recovery/automatic refresh; `updatedAt` drives "Actualizada"; 1440/768/390 px reviewed against the reference;
+  keyboard and reduced-motion checks; dependencies limited to React and scaffold tooling; backend 100/100 throughout.
+  Corrections: list failure tied to its filter (04.1), focus on first invalid field and visible list retry (04.2).
+  Commits: 04.1 `b80ff59`, 04.2 `065798c`, 04.3 `3b974a1`, 04.4 this checkpoint (`git log`).
+- Timing: see Phase 04.4 commit timestamp.
 
 ## Unfinished Work Template
 

@@ -23,13 +23,16 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 
 ### TD-02 — React + TypeScript (Vite)
 
-- **Context:** One of Vue.js, React.js or AngularJS for a minimal UI.
-- **Alternatives:** Vue 3; AngularJS (end-of-life since 2022).
-- **Decision:** React + TypeScript + Vite, hooks and native `fetch`.
-- **Trade-off:** No state/query library — manual loading/error handling.
+- **Context:** One of Vue.js, React.js or AngularJS for a minimal UI; the owner notes the target role values React.
+- **Alternatives:** Vue 3; AngularJS (end-of-life since 2022); Axios, Redux/Zustand, React Query/SWR, MUI/Bootstrap/
+  Tailwind.
+- **Decision:** React + TypeScript (strict) + Vite with hooks and local component state; native `fetch` (no Axios);
+  plain CSS built from the design tokens (no component or CSS framework); status filtering done by the API
+  (`?status=`); "Actualizada" = server `updatedAt`; background progress via the small refresh hook (TD-21).
+- **Trade-off:** No state/query library — manual loading/error handling and polling code (~70 lines).
 - **Risks:** Low; one screen.
-- **Validation:** Phase 04.1 — `npm run build` (strict `tsc -b` + `vite build`) and `npm run lint` pass; smoke with
-  API + Worker + Vite rendered a processed request. Full functional/visual validation in 04.3.
+- **Validation:** Phase 04.1 — `npm run build` (strict `tsc -b` + `vite build`) and `npm run lint` pass. Phase 04.3 —
+  real-browser acceptance against the real API, SQL Server and Worker; 1440/768/390 px review (roadmap evidence).
 - **Future evolution:** add a query library if screens and caching needs grow.
 
 ### TD-21 — Portal refresh, API configuration and error presentation
@@ -163,7 +166,10 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Decision:** xUnit + Moq on state transitions, retry, idempotency, input validation; written with each phase.
 - **Trade-off:** No automated UI/E2E tests (no Vitest/Jest/Playwright added for the single screen); the frontend is
   validated by strict TypeScript/Vite build, oxlint and real-browser acceptance against the real API, SQL Server and
-  Worker, plus responsive review. UI regressions are therefore caught by review, not by an automated suite.
+  Worker, plus responsive review. UI regressions are therefore caught by review, not by an automated suite. Reason,
+  specific to this challenge: a small single-screen UI, a strict 2-hour limit, and the business risks (idempotency,
+  state rules, retries) already covered by automated backend tests; a production build plus real-stack acceptance gave
+  more value per minute than new test infrastructure. A growing UI would warrant component/E2E tests.
 - **Validation:** Phases 01–02 — 71 tests (transitions, idempotency incl. race, validation, LocalDB, HTTP); targeted
   mutations made them fail (01.3, 02.3). Phase 03 — 100 tests incl. retry/recovery/end-to-end Worker; six mutations
   detected. Phase 04.3 — browser acceptance of 201/200/409/400/filter/Failed/network recovery/refresh and 1440/768/390 px
