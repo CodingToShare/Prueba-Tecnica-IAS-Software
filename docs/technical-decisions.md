@@ -58,9 +58,9 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Context:** Users retry on slowness; the same operation must not create duplicate effects.
 - **Alternatives:** `Idempotency-Key` header; always 409 on duplicates; silently return existing on any duplicate.
 - **Decision:** new → 201; same reference + equivalent payload → 200 with existing; conflicting payload → 409.
-- **Trade-off:** "Equivalent" must be defined (OD-02).
+- **Trade-off:** "Equivalent" had to be defined (OD-02 → TD-19).
 - **Risks:** A client reusing a reference for a different operation gets 409 (intended).
-- **Validation:** pending (Phase 02 tests).
+- **Validation:** Phase 02.1 manual smoke (201/200/409); automated tests pending 02.3.
 
 ### TD-06 — Database UNIQUE constraint as final guard
 
@@ -189,6 +189,40 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Validation:** Phase 01.3 — 6 LocalDB tests pass (migration, indexes, UNIQUE rejection 2601/2627, mapping, round
   trip, status query); unique per-run database dropped afterwards; override variable `SERVICEREQUESTS_TEST_SQLSERVER`.
 
+### TD-18 — Server-owned UTC timestamps (`CreatedAt`, `UpdatedAt`)
+
+- **Context:** The design table shows "Actualizada"; processing needs a meaningful last-change time; ordering needs
+  a creation time.
+- **Alternatives:** no timestamps; database defaults (`SYSUTCDATETIME()`); EF `SaveChanges` interceptor.
+- **Decision:** `DateTimeOffset` in UTC owned by the domain: the constructor sets both to `now`, each successful
+  transition sets `UpdatedAt = now`, `CreatedAt` never changes. `now` comes from `TimeProvider` (registered as
+  `TimeProvider.System`), so tests pass fixed instants. Clients never send timestamps. Stored as `datetimeoffset`
+  via the new migration `AddRequestTimestamps` (`InitialCreate` unchanged). Recorded 2026-11-14 (Phase 02, approved
+  before implementation). The UI uses `UpdatedAt` for "Actualizada" (Phase 04).
+- **Trade-off:** transition methods take a `now` argument.
+- **Risks:** rows created before the migration would receive `0001-01-01` (none exist).
+- **Validation:** Phase 02.1 — domain timestamp tests pass; smoke rows stored with UTC offsets. Full evidence 02.3.
+
+### TD-19 — External reference identity and equivalent replay (resolves OD-02)
+
+- **Context:** Retries must not duplicate; the database collation is `SQL_Latin1_General_CP1_CI_AS` (01.3).
+- **Alternatives:** case-fold references in code (`ToUpper`/`ToLower`); case-sensitive column collation; compare
+  every field case-insensitively.
+- **Decision:**
+  - Identity: `externalReference` is trimmed, stored with the submitted casing and looked up with plain equality, so
+    SQL Server's case-insensitive collation and the UNIQUE index decide identity (`REQ-1` = `req-1` = `Req-1`). No
+    `ToLower`/`ToUpper`/`LOWER()`/`UPPER()`.
+  - Equivalent payload: `CustomerId`, `ServiceCode`, `Description` ordinally equal after trimming (casing significant).
+    Same rule on the first lookup and after a UNIQUE race (`ServiceRequest.HasEquivalentPayload`).
+  - Example: existing `REQ-1/CUST-01/INST/Install service`; replay `req-1/CUST-01/INST/Install service` → 200;
+    `req-1/cust-01/...` → 409.
+  - Recorded 2026-11-14 (Phase 02, approved before implementation).
+- **Trade-off:** a client re-sending business values with different casing gets 409 (deliberate; the challenge does
+  not define case-insensitive business values).
+- **Risks:** moving to a case-sensitive collation would change identity → covered by documenting the dependency.
+- **Validation:** Phase 02.1 — OD-02 unit matrix passes; smoke: lower-cased padded reference → 200, `customerId`
+  case change → 409. API/race tests pending 02.3.
+
 ---
 
 ## Assumptions
@@ -207,6 +241,6 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 | ID | Question | Owner phase | Status |
 | --- | --- | --- | --- |
 | OD-01 | .NET 10 SDK is not installed (only 8.0.403): install it, or record a fallback to .NET 8 LTS (EF Core 8)? | Before Phase 01 (user) | Resolved 2026-11-14: user installed SDK 10.0.404; TD-01 unchanged |
-| OD-02 | Which fields define an "equivalent" replay (proposal: `customerId`, `serviceCode`, `description` after trimming)? | 02 | Open |
+| OD-02 | Which fields define an "equivalent" replay (proposal: `customerId`, `serviceCode`, `description` after trimming)? | 02 | Resolved 2026-11-14 → TD-19 (trimmed ordinal equality of the three fields) |
 | OD-03 | Database initialization: `dotnet ef database update` vs automatic migration at API startup in Development? | 01 | Resolved 2026-11-14 → TD-16 (explicit migrations) |
 | OD-04 | Persistence tests: SQLite in-memory (enforces UNIQUE) vs LocalDB? | 02 | Resolved 2026-11-14 → TD-17 (LocalDB); evidenced in 01.3 |

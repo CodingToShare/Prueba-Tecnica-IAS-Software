@@ -8,6 +8,8 @@ namespace ServiceRequests.Tests.Persistence;
 [Collection(LocalDbCollection.Name)]
 public class ServiceRequestPersistenceTests(LocalDbFixture database)
 {
+    private static readonly DateTimeOffset Now = new(2026, 11, 14, 15, 0, 0, TimeSpan.Zero);
+
     [Fact]
     public async Task Migrations_OnCleanDatabase_AreAllApplied()
     {
@@ -45,12 +47,12 @@ public class ServiceRequestPersistenceTests(LocalDbFixture database)
         var reference = UniqueReference();
         await using (var context = database.CreateContext())
         {
-            context.ServiceRequests.Add(new ServiceRequest(reference, "CUST-1", "SVC-1", "first"));
+            context.ServiceRequests.Add(new ServiceRequest(reference, "CUST-1", "SVC-1", "first", Now));
             await context.SaveChangesAsync();
         }
 
         await using var second = database.CreateContext();
-        second.ServiceRequests.Add(new ServiceRequest(reference, "CUST-2", "SVC-2", "second, distinct entity"));
+        second.ServiceRequests.Add(new ServiceRequest(reference, "CUST-2", "SVC-2", "second, distinct entity", Now));
 
         var exception = await Assert.ThrowsAsync<DbUpdateException>(() => second.SaveChangesAsync());
 
@@ -65,9 +67,9 @@ public class ServiceRequestPersistenceTests(LocalDbFixture database)
     [Fact]
     public async Task SaveChanges_WithFailedRequest_PersistsStatusAsTextAndReason()
     {
-        var request = new ServiceRequest(UniqueReference(), "CUST-1", "SVC-1", "will fail");
-        request.MarkProcessing();
-        request.Fail("transient failures exhausted");
+        var request = new ServiceRequest(UniqueReference(), "CUST-1", "SVC-1", "will fail", Now);
+        request.MarkProcessing(Now);
+        request.Fail("transient failures exhausted", Now);
 
         await using (var context = database.CreateContext())
         {

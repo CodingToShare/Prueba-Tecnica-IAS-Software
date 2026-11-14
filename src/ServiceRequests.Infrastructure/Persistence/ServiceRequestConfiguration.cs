@@ -38,6 +38,9 @@ internal sealed class ServiceRequestConfiguration : IEntityTypeConfiguration<Ser
         builder.Property(r => r.FailureReason)
             .HasMaxLength(ServiceRequest.FailureReasonMaxLength);
 
+        builder.Property(r => r.CreatedAt).IsRequired();
+        builder.Property(r => r.UpdatedAt).IsRequired();
+
         // Final guard for idempotency under concurrent submissions (TD-06).
         builder.HasIndex(r => r.ExternalReference)
             .IsUnique()

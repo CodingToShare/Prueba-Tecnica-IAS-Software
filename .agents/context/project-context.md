@@ -62,7 +62,8 @@ Dependencies: Api/Worker → Infrastructure → Core. Core stays free of EF Core
 
 `externalReference` (idempotency key, UNIQUE), `customerId`, `serviceCode`, `description`, `status`
 (+ technical fields as needed). Implemented in 01.1: Guid v7 `Id`, nullable `FailureReason`; lengths
-100/50/50/1000/500; status stored as text. No timestamps yet (open finding for Phase 02/04).
+100/50/50/1000/500; status stored as text. Phase 02.1: server-owned UTC `CreatedAt`/`UpdatedAt` (TD-18; `now` from
+`TimeProvider`; UI "Actualizada" = `UpdatedAt`).
 
 ## Idempotency Semantics
 
@@ -72,7 +73,10 @@ Dependencies: Api/Worker → Infrastructure → Core. Core stays free of EF Core
 | Same reference, equivalent payload | return existing → **200 OK** |
 | Same reference, conflicting payload | **409 Conflict** (ProblemDetails) |
 
-The DB UNIQUE index is the final concurrency guard (an `Exists()` check alone is racy).
+The DB UNIQUE index is the final concurrency guard (an `Exists()` check alone is racy); on a 2601/2627 race the
+service re-reads and applies the same rule. TD-19: reference identity follows the case-insensitive collation (no
+case-folding in code; trimmed, casing preserved); equivalent payload = trimmed ordinal equality of `customerId`,
+`serviceCode`, `description`.
 Provider side: the simulated provider treats `externalReference` as an idempotency key; a real provider must offer
 equivalent semantics or reconciliation (crash after provider success but before persisting Completed).
 
@@ -115,10 +119,11 @@ authentication, pagination, DELETE/generic update.
 
 ## Current Phase
 
-Phases 00, 00.1 and 01 (01.1 build, 01.2 review, 01.3 validation) complete; Phase 02 awaits authorization.
-Tests: `dotnet test ServiceRequests.sln` (33; persistence tests use a throwaway LocalDB database, TD-17; override
-server with `SERVICEREQUESTS_TEST_SQLSERVER`). Database collation is case-insensitive (`SQL_Latin1_General_CP1_CI_AS`)
-— decide the externalReference comparison rule with OD-02. Database init (TD-16): `dotnet tool restore`, then
+Phases 00, 00.1 and 01 complete. Phase 02 In Progress: 02.1 (API development) complete; 02.2 review, 02.3 tests
+and 02.4 docs each await authorization. API: `POST /api/requests`, `GET /api/requests[?status=]`; CORS origin from
+`Cors:AllowedOrigins` (default `http://localhost:5173`).
+Tests: `dotnet test ServiceRequests.sln` (43; persistence tests use a throwaway LocalDB database, TD-17; override
+server with `SERVICEREQUESTS_TEST_SQLSERVER`). Database init (TD-16): `dotnet tool restore`, then
 `dotnet ef database update --project src/ServiceRequests.Infrastructure --startup-project src/ServiceRequests.Api`.
 See `docs/phases/roadmap.md` for status.
 

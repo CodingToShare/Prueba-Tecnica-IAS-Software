@@ -5,6 +5,8 @@ namespace ServiceRequests.Tests.Domain;
 
 public class ServiceRequestTests
 {
+    private static readonly DateTimeOffset Now = new(2026, 11, 14, 15, 0, 0, TimeSpan.Zero);
+
     public enum Transition
     {
         MarkProcessing,
@@ -15,7 +17,7 @@ public class ServiceRequestTests
     [Fact]
     public void Constructor_WithValidValues_StartsPendingWithTrimmedValues()
     {
-        var request = new ServiceRequest("  REQ-1 ", " CUST-9 ", " INSTALL ", "  Install meter  ");
+        var request = new ServiceRequest("  REQ-1 ", " CUST-9 ", " INSTALL ", "  Install meter  ", Now);
 
         Assert.Equal(ServiceRequestStatus.Pending, request.Status);
         Assert.Equal("REQ-1", request.ExternalReference);
@@ -45,7 +47,7 @@ public class ServiceRequestTests
         string? externalReference, string? customerId, string? serviceCode, string? description, string expectedParameter)
     {
         var exception = Assert.Throws<ArgumentException>(
-            () => new ServiceRequest(externalReference!, customerId!, serviceCode!, description!));
+            () => new ServiceRequest(externalReference!, customerId!, serviceCode!, description!, Now));
 
         Assert.Equal(expectedParameter, exception.ParamName);
     }
@@ -55,7 +57,7 @@ public class ServiceRequestTests
     {
         var request = NewRequest();
 
-        request.MarkProcessing();
+        request.MarkProcessing(Now);
 
         Assert.Equal(ServiceRequestStatus.Processing, request.Status);
     }
@@ -65,7 +67,7 @@ public class ServiceRequestTests
     {
         var request = InStatus(ServiceRequestStatus.Processing);
 
-        request.Complete();
+        request.Complete(Now);
 
         Assert.Equal(ServiceRequestStatus.Completed, request.Status);
         Assert.Null(request.FailureReason);
@@ -76,7 +78,7 @@ public class ServiceRequestTests
     {
         var request = InStatus(ServiceRequestStatus.Processing);
 
-        request.Fail("  provider unavailable  ");
+        request.Fail("  provider unavailable  ", Now);
 
         Assert.Equal(ServiceRequestStatus.Failed, request.Status);
         Assert.Equal("provider unavailable", request.FailureReason);
@@ -87,7 +89,7 @@ public class ServiceRequestTests
     {
         var request = InStatus(ServiceRequestStatus.Processing);
 
-        request.Fail(new string('x', ServiceRequest.FailureReasonMaxLength + 50));
+        request.Fail(new string('x', ServiceRequest.FailureReasonMaxLength + 50), Now);
 
         Assert.Equal(ServiceRequest.FailureReasonMaxLength, request.FailureReason!.Length);
     }
@@ -100,7 +102,7 @@ public class ServiceRequestTests
     {
         var request = InStatus(ServiceRequestStatus.Processing);
 
-        Assert.Throws<ArgumentException>(() => request.Fail(reason!));
+        Assert.Throws<ArgumentException>(() => request.Fail(reason!, Now));
         Assert.Equal(ServiceRequestStatus.Processing, request.Status);
     }
 
@@ -143,7 +145,7 @@ public class ServiceRequestTests
         Assert.Empty(publicSetters);
     }
 
-    private static ServiceRequest NewRequest() => new("REQ-1", "CUST-1", "SVC-1", "Description");
+    private static ServiceRequest NewRequest() => new("REQ-1", "CUST-1", "SVC-1", "Description", Now);
 
     private static ServiceRequest InStatus(ServiceRequestStatus status)
     {
@@ -153,15 +155,15 @@ public class ServiceRequestTests
             case ServiceRequestStatus.Pending:
                 break;
             case ServiceRequestStatus.Processing:
-                request.MarkProcessing();
+                request.MarkProcessing(Now);
                 break;
             case ServiceRequestStatus.Completed:
-                request.MarkProcessing();
-                request.Complete();
+                request.MarkProcessing(Now);
+                request.Complete(Now);
                 break;
             case ServiceRequestStatus.Failed:
-                request.MarkProcessing();
-                request.Fail("transient failures exhausted");
+                request.MarkProcessing(Now);
+                request.Fail("transient failures exhausted", Now);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(status), status, null);
@@ -176,13 +178,13 @@ public class ServiceRequestTests
         switch (transition)
         {
             case Transition.MarkProcessing:
-                request.MarkProcessing();
+                request.MarkProcessing(Now);
                 break;
             case Transition.Complete:
-                request.Complete();
+                request.Complete(Now);
                 break;
             case Transition.Fail:
-                request.Fail("another failure");
+                request.Fail("another failure", Now);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(transition), transition, null);

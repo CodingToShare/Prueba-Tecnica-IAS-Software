@@ -9,11 +9,13 @@ namespace ServiceRequests.Tests.Persistence;
 [Collection(LocalDbCollection.Name)]
 public class ServiceRequestRoundTripTests(LocalDbFixture database)
 {
+    private static readonly DateTimeOffset Now = new(2026, 11, 14, 15, 0, 0, TimeSpan.Zero);
+
     [Fact]
     public async Task NewRequest_SavedAndReloadedInFreshContext_KeepsBusinessDataAndPendingStatus()
     {
         var reference = ServiceRequestPersistenceTests.UniqueReference();
-        var created = new ServiceRequest($"  {reference}  ", " CUST-42 ", " METER-INSTALL ", " Install meter at site ");
+        var created = new ServiceRequest($"  {reference}  ", " CUST-42 ", " METER-INSTALL ", " Install meter at site ", Now);
 
         await using (var writeContext = database.CreateContext())
         {
@@ -36,12 +38,12 @@ public class ServiceRequestRoundTripTests(LocalDbFixture database)
     public async Task QueryByStatus_ReturnsOnlyRequestsInThatStatus()
     {
         var batch = $"QS-{Guid.NewGuid():N}";
-        var pending = new ServiceRequest($"{batch}-pending", "CUST-1", "SVC-1", "stays pending");
-        var processing = new ServiceRequest($"{batch}-processing", "CUST-1", "SVC-1", "claimed");
-        processing.MarkProcessing();
-        var completed = new ServiceRequest($"{batch}-completed", "CUST-1", "SVC-1", "done");
-        completed.MarkProcessing();
-        completed.Complete();
+        var pending = new ServiceRequest($"{batch}-pending", "CUST-1", "SVC-1", "stays pending", Now);
+        var processing = new ServiceRequest($"{batch}-processing", "CUST-1", "SVC-1", "claimed", Now);
+        processing.MarkProcessing(Now);
+        var completed = new ServiceRequest($"{batch}-completed", "CUST-1", "SVC-1", "done", Now);
+        completed.MarkProcessing(Now);
+        completed.Complete(Now);
 
         await using (var writeContext = database.CreateContext())
         {
