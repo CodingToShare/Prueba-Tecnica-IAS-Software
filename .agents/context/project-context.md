@@ -122,7 +122,7 @@ authentication, pagination, DELETE/generic update.
 
 ## Current Phase
 
-Phases 00, 00.1, 01, 02 and 03 complete. Phase 04 In Progress: 04.1 React portal development and 04.2 review complete (`frontend/service-requests-web`, `npm run build`, `npm run lint`; `VITE_API_BASE_URL`); 04.3–04.4 await authorization.
+Phases 00, 00.1, 01, 02 and 03 complete. Phase 04 In Progress: 04.1 development, 04.2 review and 04.3 browser validation complete (`frontend/service-requests-web`, `npm run build`, `npm run lint`; `VITE_API_BASE_URL`); 04.4 awaits authorization.
 Execution guide: `README.md`. API: `POST /api/requests`, `GET /api/requests[?status=]`; CORS origin from
 `Cors:AllowedOrigins` (default `http://localhost:5173`).
 Tests: `dotnet test ServiceRequests.sln` (100: unit incl. Worker, LocalDB integration incl. Worker processing, functional API + Worker host + 500; LocalDB integration, HTTP via WebApplicationFactory; persistence tests use a throwaway LocalDB database, TD-17; override

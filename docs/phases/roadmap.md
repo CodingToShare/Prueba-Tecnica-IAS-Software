@@ -27,7 +27,7 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 04 | React portal | 18 min | In Progress |
 | 04.1 | Development | 8 min | Complete |
 | 04.2 | UX / architecture / contract review | 3 min | Complete |
-| 04.3 | Build + functional + visual validation | 5 min | Not Started |
+| 04.3 | Build + functional + visual validation | 5 min | Complete |
 | 04.4 | Documentation / evidence / AI | 2 min | Not Started |
 | 05 | Critical test hardening | 12 min | Not Started |
 | 06 | Documentation and legacy review | 10 min | Not Started |
@@ -535,6 +535,55 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   Worker error waits for restart, simulated provider state per process); StringLength and 500 remain closed.
 - Validation after corrections: `npm run build` OK, `npm run lint` 0/0; `dotnet build` 0 warnings; `dotnet test` 100/100.
 - Timing: see Phase 04.2 commit timestamp.
+
+### Phase 04.3 — Complete (Phase 04 In Progress)
+
+- Strategy (TD-12): no frontend test framework; validation = strict TypeScript/Vite build + oxlint + real-browser
+  acceptance against the real API, SQL Server and Worker + responsive review + backend regression.
+- Static: `npm ci` (0 vulnerabilities), `npm run build` OK, `npm run lint` 0/0. Backend: `dotnet build` 0 warnings,
+  `dotnet test` 100/100 (before and after).
+- Stack: migrations applied to `ServiceRequestsDb`; `dotnet run` API (5164) and Worker (with
+  `Worker__PollingIntervalMilliseconds=5000`, `Worker__RetryDelayMilliseconds=5000` env overrides so Pending and
+  Processing are observable), Vite dev server (5173, `VITE_API_BASE_URL` from the environment). Browser: headless Edge
+  driven over the DevTools protocol by a throwaway script in the session scratchpad (not part of the repository):
+  real input events, clicks and key presses; requested URLs read from the Resource Timing API.
+- Functional results (all through the UI, no direct SQL):
+  - 201: `alert-normal` "Solicitud registrada… Pending · 201 Created", form cleared; row Pending → Processing →
+    Completed without reload.
+  - 200: identical replay and a lower-cased padded reference → `alert-informational` "Ya existía… no se creó un
+    duplicado · 200 OK"; one row in UI and API, same id.
+  - 409: `alert-warning` "La referencia … ya existe con datos diferentes · 409 Conflict"; input kept; stored row
+    unchanged (`CUS-1042`, Completed).
+  - Validation: empty submit → `alert-error`, all four fields `aria-invalid` with `aria-describedby`, no POST sent,
+    focus on the first field; a real server 400 (test harness rewrote the outgoing body in the page to an over-long
+    service code) → field error on `serviceCode`, input kept, no server text shown.
+  - Filter: `?status=Completed`, `?status=Failed`, `?status=Processing` ("Sin resultados" + "Ver todas"),
+    `?status=Pending` and "Todas" (`/api/requests`) requested by the browser; `aria-pressed` follows the selection;
+    with "Pending" active a request left the view by itself when the Worker took it, filter unchanged.
+  - Failed: `UNSUPPORTED` → Failed badge in `critical` (rgb 159,18,57 on #fdecef) with diamond marker, not `destructive`.
+  - Network: API process stopped → list kept rows with "No se pudo actualizar la lista · Reintentar"; form submit →
+    "No se pudo contactar el servicio… Reintentar", input kept; filter without cached rows → error state with
+    "Reintentar" (click issues a new request); API restarted → the list recovered on the next automatic refresh and the
+    form retry got 201. No crash.
+  - Background refresh (visible tab): 4 GETs about 3 s apart (3008/3018/3016 ms), no overlap; Pending → Processing →
+    Completed observed automatically.
+  - "Actualizada": `<time datetime>` equals the API `updatedAt` (e.g. `2026-11-14T17:01:24.4067421+00:00`), not
+    `createdAt` (`…17:01:17.17…`); shown as `es-CO` text with the full date in `title`.
+- Visual (screenshots inspected, compared with the reference simulation): 1440 px two columns (form 380 px, table
+  fills the rest), brand bar, panels, badges, alerts match the reference language; 768 px stacked (form first), full
+  table, no overflow; 390 px stacked labeled rows, wrapped filter, no horizontal overflow (`scrollWidth` =
+  `clientWidth` at all three widths). Accepted differences: full-width brand bar (recorded deviation), submit alert
+  inside the form panel (contract §6), `es-CO` date text instead of the illustrative "14 nov · 09:41".
+- Keyboard: Tab order skip link → Actualizar → 4 fields → Registrar → filter buttons; skip link visible on focus and
+  moves focus to `#contenido`; focus indicator on every stop (3 px outline or 4 px ring); Space activates a filter
+  option; Enter in a field submits. Reduced motion (emulated): transitions 0 s, skeleton animation none.
+- Test-environment notes: Edge's sync dialog tab first kept the portal tab hidden (no `requestAnimationFrame`, list
+  refresh paused by design); the portal tab was brought to the front and focus/refresh were re-validated visible.
+  A screenshot of that dialog showed the signed-in account and was deleted immediately; the test browser profile was
+  deleted at the end. Test rows (`UI-%`) deleted; API, Worker, Vite and the test browser stopped (by profile, not by
+  process name).
+- Corrections: none to product code.
+- Timing: see Phase 04.3 commit timestamp.
 
 ## Unfinished Work Template
 

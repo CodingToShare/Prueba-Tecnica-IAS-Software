@@ -161,9 +161,13 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Context:** Limited time; costliest bugs are duplicate effects and illegal state changes.
 - **Alternatives:** broad coverage including UI/E2E tests.
 - **Decision:** xUnit + Moq on state transitions, retry, idempotency, input validation; written with each phase.
-- **Trade-off:** No automated UI/E2E tests; frontend validated by build + manual smoke.
+- **Trade-off:** No automated UI/E2E tests (no Vitest/Jest/Playwright added for the single screen); the frontend is
+  validated by strict TypeScript/Vite build, oxlint and real-browser acceptance against the real API, SQL Server and
+  Worker, plus responsive review. UI regressions are therefore caught by review, not by an automated suite.
 - **Validation:** Phases 01–02 — 71 tests (transitions, idempotency incl. race, validation, LocalDB, HTTP); targeted
-  mutations made them fail (01.3, 02.3). Retry tests pending Phase 03.
+  mutations made them fail (01.3, 02.3). Phase 03 — 100 tests incl. retry/recovery/end-to-end Worker; six mutations
+  detected. Phase 04.3 — browser acceptance of 201/200/409/400/filter/Failed/network recovery/refresh and 1440/768/390 px
+  review (roadmap evidence).
 
 ### TD-13 — Visual language from design system v3
 
