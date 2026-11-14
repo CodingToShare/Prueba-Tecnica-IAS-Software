@@ -1,139 +1,177 @@
-# Technical Decisions
+# Technical Decisions, Assumptions And Open Decisions
 
-Format: Context · Decision · Why · Trade-off · Future evolution · Evidence.
-"Evidence: pending" means the decision is accepted but not yet implemented or validated.
+Categories stay separate: **REQUIREMENT** (from the challenge — see `requirements-traceability.md`), **TECHNICAL DECISION**
+(TD), **ASSUMPTION** (A), **OPEN DECISION** (OD), **OUT OF SCOPE**. An entry changes category only through a recorded decision.
+
+Decision format (challenge §6): Context · Alternatives · Decision · Trade-off · Risks · Validation · Future evolution.
+"Validation: pending" means accepted but not yet implemented or verified.
 
 ---
 
-## TD-01 — .NET 10 / ASP.NET Core
+## Technical Decisions
 
-- **Context:** Backend must be C# + ASP.NET/Web API; any .NET generation allowed; must integrate with Windows-hosted services.
+### TD-01 — .NET 10 / ASP.NET Core
+
+- **Context:** Backend must be C# + ASP.NET/Web API; any .NET generation allowed; must coexist with Windows-hosted services.
+- **Alternatives:** ASP.NET Framework 4.8 Web API; .NET 8 LTS.
 - **Decision:** .NET 10 with ASP.NET Core controllers and EF Core 10.
-- **Why:** Current LTS; first-class Worker Service + Windows Service hosting; built-in ProblemDetails, DI, Options.
-- **Trade-off:** Not directly runnable on legacy .NET Framework hosts; integration with older apps is via HTTP/DB, not in-process.
-- **Future evolution:** None needed for scope.
-- **Evidence:** pending. Phase 00 found only the .NET 8.0.403 SDK installed; Phase 01 entry requires installing the
-  .NET 10 SDK or an explicit, recorded fallback to .NET 8 LTS.
+- **Trade-off:** Not runnable in-process inside legacy .NET Framework hosts; integration is via HTTP/DB.
+- **Risks:** SDK not installed on the dev machine (see OD-01).
+- **Validation:** pending (Phase 01 build).
+- **Future evolution:** none needed for scope.
 
-## TD-02 — React + TypeScript (Vite) instead of AngularJS / Vue
+### TD-02 — React + TypeScript (Vite)
 
 - **Context:** One of Vue.js, React.js or AngularJS for a minimal UI.
+- **Alternatives:** Vue 3; AngularJS (end-of-life since 2022).
 - **Decision:** React + TypeScript + Vite, hooks and native `fetch`.
-- **Why:** Typed contract with the API, fast scaffolding, no extra libraries needed for one screen. AngularJS is end-of-life.
 - **Trade-off:** No state/query library — manual loading/error handling.
-- **Future evolution:** Add a query library if screens and caching needs grow.
-- **Evidence:** pending.
+- **Risks:** Low; one screen.
+- **Validation:** pending (Phase 04 `npm run build` + manual smoke).
+- **Future evolution:** add a query library if screens and caching needs grow.
 
-## TD-03 — SQL Server instead of NoSQL
+### TD-03 — SQL Server instead of NoSQL
 
 - **Context:** Real persistence required; SQL or NoSQL.
-- **Decision:** SQL Server via EF Core migrations (LocalDB as overridable dev default).
-- **Why:** Relational model; filtering by status and uniqueness of `externalReference` are native relational concerns;
-  strong UNIQUE guarantees under concurrency.
-- **Trade-off:** Requires a SQL Server instance; schema migrations to maintain.
-- **NoSQL alternative (to be expanded in README):** e.g. a document store keyed by `externalReference` as document id
-  (uniqueness through the key or a unique index), conditional writes/ETags for state transitions and the Worker claim,
-  a secondary index on status, and no EF migrations (schema versioning in code).
-- **Evidence:** pending.
+- **Alternatives:** document store (MongoDB / Cosmos DB); SQLite.
+- **Decision:** SQL Server via EF Core migrations (LocalDB as overridable development default).
+- **Trade-off:** Requires a SQL Server instance and schema migrations.
+- **Risks:** Reviewer machine without SQL Server/LocalDB → documented connection-string override.
+- **NoSQL alternative (README, 3–5 lines):** `externalReference` as document id (uniqueness by key), conditional
+  writes/ETags for state transitions and the Worker claim, secondary index on status, schema versioned in code instead
+  of migrations.
+- **Validation:** pending (Phase 01 migration on empty database).
 
-## TD-04 — Pragmatic four-project backend
+### TD-04 — Pragmatic four-project backend
 
-- **Context:** Small domain, 2-hour limit, need to share logic between API and Worker.
+- **Context:** Small domain, 2-hour limit, logic shared by API and Worker.
+- **Alternatives:** single project; Clean Architecture with separate Domain/Application.
 - **Decision:** `Core` (entity, transitions, use cases, interfaces), `Infrastructure` (EF Core, simulated provider), `Api`, `Worker`.
-- **Why:** API and Worker share Core/Infrastructure without duplication; boundaries are clear without ceremony.
 - **Trade-off:** Core mixes domain and application concerns.
-- **Future evolution:** Split Domain/Application only if the domain grows.
-- **Evidence:** pending.
+- **Risks:** Low.
+- **Validation:** pending (project references respect dependency direction).
+- **Future evolution:** split Domain/Application only if the domain grows.
 
-## TD-05 — `externalReference` as idempotency key
+### TD-05 — `externalReference` as idempotency key
 
 - **Context:** Users retry on slowness; the same operation must not create duplicate effects.
-- **Decision:** New → 201; same reference + equivalent payload → 200 with existing; conflicting payload → 409.
-- **Why:** Retries are safe and observable; real conflicts are not silently hidden.
-- **Trade-off:** "Equivalent" must be defined (compare customerId, serviceCode, description after trimming — confirm in Phase 02).
-- **Future evolution:** Idempotency-Key header / expiration policy if required by clients.
-- **Evidence:** pending.
+- **Alternatives:** `Idempotency-Key` header; always 409 on duplicates; silently return existing on any duplicate.
+- **Decision:** new → 201; same reference + equivalent payload → 200 with existing; conflicting payload → 409.
+- **Trade-off:** "Equivalent" must be defined (OD-02).
+- **Risks:** A client reusing a reference for a different operation gets 409 (intended).
+- **Validation:** pending (Phase 02 tests).
 
-## TD-06 — Database UNIQUE constraint as final guard
+### TD-06 — Database UNIQUE constraint as final guard
 
 - **Context:** An application `Exists()` check is racy under concurrent submissions.
-- **Decision:** UNIQUE index on `ExternalReference`; unique-violation (2601/2627) translated to the replay/conflict path.
-- **Why:** Only the database can serialize concurrent inserts reliably.
+- **Alternatives:** application lock; serializable transaction.
+- **Decision:** UNIQUE index on `ExternalReference`; SQL errors 2601/2627 translated to the replay/conflict path.
 - **Trade-off:** Exception-driven path for the rare race.
-- **Evidence:** pending.
+- **Risks:** Translation must not leak SQL details.
+- **Validation:** pending (Phase 01 migration + Phase 02 tests).
 
-## TD-07 — Separate Worker Service
+### TD-07 — Separate Worker Service
 
-- **Context:** Background processing must be runnable manually and deployable as a Windows Service.
-- **Decision:** `ServiceRequests.Worker` with `BackgroundService`, Windows Service hosting support.
-- **Why:** Independent lifecycle from the API (deploy, restart, scale separately); matches the team's Windows-service estate.
+- **Context:** Background processing runnable manually and deployable as a Windows Service.
+- **Alternatives:** `IHostedService` inside the API; Hangfire/Quartz.
+- **Decision:** `ServiceRequests.Worker` with `BackgroundService` and Windows Service hosting support.
 - **Trade-off:** Two processes to run locally.
-- **Future evolution:** Production install via `sc.exe`/installer; health monitoring.
-- **Evidence:** pending.
+- **Risks:** Low.
+- **Validation:** pending (Phase 03 manual run: Pending → Completed).
+- **Future evolution:** production install via `sc.exe`/installer; health monitoring.
 
-## TD-08 — Polly only around transient provider failures
+### TD-08 — Polly only around transient provider failures
 
 - **Context:** Provider fails transiently; retrying everything hides bugs and can duplicate effects.
-- **Decision:** Bounded retry (few attempts, short backoff) only for a modeled transient failure type at the provider boundary.
-- **Why:** Resilience where failure is expected; fail fast elsewhere.
-- **Trade-off:** Long outages end as `Failed`; no automatic later re-drive.
-- **Future evolution:** Circuit breaker, scheduled re-drive of Failed requests.
-- **Evidence:** pending.
+- **Alternatives:** hand-written retry loop; retry all exceptions.
+- **Decision:** bounded retry (few attempts, short backoff) for a modeled transient failure type at the provider boundary only.
+- **Trade-off:** Long outages end as `Failed`; no automatic re-drive.
+- **Risks:** Misclassifying a permanent error as transient → covered by tests.
+- **Validation:** pending (Phase 03 Moq tests).
+- **Future evolution:** circuit breaker; scheduled re-drive of Failed requests.
 
-## TD-09 — Single Worker instance assumption
+### TD-09 — Single Worker instance assumption
 
 - **Context:** Distributed coordination is out of scope for 2 hours.
-- **Decision:** One Worker instance; claim by persisting `Processing` before calling the provider.
-- **Why:** Simple and correct for one instance.
-- **Trade-off:** Multiple instances could double-claim; a crash can leave requests in `Processing`.
-- **Mitigation (planned, Phase 03):** on startup the Worker resumes requests left in `Processing`; safe with one instance
-  because the provider is idempotent by `externalReference` (TD-10). If cut for time, documented as a limitation.
-- **Future evolution:** Atomic claim (conditional UPDATE / rowversion), lease timeout to recover stuck requests.
-- **Evidence:** pending.
+- **Alternatives:** atomic conditional UPDATE claim; `UPDLOCK, READPAST` queue pattern.
+- **Decision:** one Worker instance; claim by persisting `Processing` before calling the provider.
+- **Trade-off:** Multiple instances could double-claim.
+- **Risks:** A crash can leave requests in `Processing`. Mitigation (planned, Phase 03): resume them at Worker startup —
+  safe because the provider is idempotent (TD-10). If cut for time, documented as a limitation.
+- **Validation:** pending.
+- **Future evolution:** atomic claim + lease timeout.
 
-## TD-10 — Simulated provider is idempotent by `externalReference`
+### TD-10 — Simulated provider idempotent by `externalReference`
 
 - **Context:** A DB UNIQUE constraint does not guarantee exactly-once external effects (provider success → crash → retry).
-- **Decision:** Simulated provider records processed references and returns the prior result on repeat.
-- **Why:** Models the contract a real provider must offer.
-- **Trade-off:** Real integration still depends on provider support or reconciliation.
-- **Evidence:** pending.
+- **Alternatives:** transactional outbox; reconciliation job.
+- **Decision:** the simulated provider records processed references and returns the prior result on repeat.
+- **Trade-off:** Real integration depends on provider support or reconciliation.
+- **Risks:** In-memory record is lost on restart (acceptable for a simulation; documented).
+- **Validation:** pending (Phase 03 test).
 
-## TD-11 — Deliberately excluded
+### TD-11 — Deliberately excluded
 
 | Excluded | Reason |
 | --- | --- |
-| Outbox / message broker | Single DB + single Worker; DB-polling is enough; documented as evolution |
+| Outbox / message broker | Single DB + single Worker; DB polling is enough; documented as evolution |
 | YARP | No gateway/routing need |
 | Cache | Tiny dataset, status must be fresh |
 | ETL / SSIS | No bulk data movement |
-| Authentication | Not required by the challenge; inputs, errors, config and secrets still handled safely |
+| Authentication | Not required; inputs, errors, config and secrets still handled safely |
 | Docker / CI/CD / cloud | Not required; would displace core scope |
 
-## TD-12 — Tests concentrated on highest risk
+### TD-12 — Tests concentrated on highest risk
 
-- **Context:** Limited time; the costliest bugs are duplicate effects and illegal state changes.
-- **Decision:** xUnit + Moq on state transitions, retry behavior, idempotency, input validation; written with each phase.
-- **Trade-off:** No E2E/UI tests; frontend validated by build + manual smoke.
-- **Evidence:** pending.
+- **Context:** Limited time; costliest bugs are duplicate effects and illegal state changes.
+- **Alternatives:** broad coverage including UI/E2E tests.
+- **Decision:** xUnit + Moq on state transitions, retry, idempotency, input validation; written with each phase.
+- **Trade-off:** No automated UI/E2E tests; frontend validated by build + manual smoke.
+- **Validation:** pending.
 
-## TD-13 — Visual language adapted from an existing design system
+### TD-13 — Visual language from design system v3
 
-- **Context:** The challenge asks for a minimal UI; a professional, consistent look helps reviewers, but time is limited.
-  A previous project's design system v3 (navy `#1E3A5F`, Plus Jakarta Sans, semantic tokens, accessibility rules) was
-  available only as rules — its HTML reference and full contract were not included.
-- **Decision:** Reuse its visual language through a small contract (`docs/design/design-system.md`): CSS custom
-  properties, request-status and submit-feedback semantic tokens, a handful of primitives, plain CSS.
-- **Why:** Consistency and accessibility at near-zero cost; no component library or CSS framework needed.
-- **Trade-off:** Non-brand token values are derived (assumption), not copied from the canonical reference.
-- **Future evolution:** Align values with the original HTML reference if provided; extract a shared stylesheet if more screens appear.
-- **Evidence:** pending (Phase 04).
+- **Context:** A professional, consistent UI helps reviewers; time is limited. The author's design system v3 exists
+  with an HTML reference and a contract.
+- **Alternatives:** unstyled HTML; a component library (MUI, Bootstrap).
+- **Decision:** keep `docs/design/reference/design-system-v3.html` unmodified as canonical visual reference and apply
+  its tokens/patterns through `docs/design/design-system.md` with plain CSS. Status mapping: Pending neutral,
+  Processing informational, Completed normal, Failed critical. Brand bar instead of sidebar (one screen).
+- **Trade-off:** The reference contains another domain's illustrative content; only its visual language applies.
+- **Risks:** Design polish eating Phase 04 time → contract limits the component set.
+- **Validation:** pending (Phase 04 review at 1440/768/390 px vs reference).
 
-## TD-14 — Built-in logging only
+### TD-14 — Built-in logging only
 
 - **Context:** Background processing and retries must be diagnosable; observability platforms are out of scope.
-- **Decision:** `Microsoft.Extensions.Logging` with structured message templates; no Serilog, metrics or tracing.
-- **Why:** Enough to follow a request through API → Worker → provider; zero extra dependencies.
-- **Trade-off:** No dashboards/alerts; console output only.
-- **Future evolution:** Windows Event Log provider when hosted as a Windows Service; OpenTelemetry if operated at scale.
-- **Evidence:** pending.
+- **Alternatives:** Serilog; OpenTelemetry.
+- **Decision:** `Microsoft.Extensions.Logging` with structured templates; no metrics or tracing.
+- **Trade-off:** Console output only.
+- **Validation:** pending.
+- **Future evolution:** Windows Event Log provider when hosted as a Windows Service.
+
+### TD-15 — Dependency versions pinned when introduced
+
+- **Decision:** packages are chosen and pinned in the phase that first needs them, never during Phase 00.
+
+---
+
+## Assumptions
+
+| ID | Assumption | Impact if wrong |
+| --- | --- | --- |
+| A-01 | Portal users are Spanish speakers: UI copy in Spanish; status labels keep the challenge names. | Copy change only |
+| A-02 | `customerId` and `serviceCode` are free-text identifiers (no catalog to validate against); length-limited. | Add catalog validation |
+| A-03 | `Failed` is final for automatic processing (no automatic re-drive); a replay of its `externalReference` returns the existing Failed request. | Add re-drive endpoint/job |
+| A-04 | One Worker instance in this delivery (TD-09). | Need atomic claim |
+| A-05 | No authentication is expected for the challenge; the API runs on a trusted internal network. | Add auth |
+| A-06 | Transient provider failure is the only modeled failure; non-transient failures fail fast to `Failed`. | Extend classification |
+
+## Open Decisions
+
+| ID | Question | Owner phase | Status |
+| --- | --- | --- | --- |
+| OD-01 | .NET 10 SDK is not installed (only 8.0.403): install it, or record a fallback to .NET 8 LTS (EF Core 8)? | Before Phase 01 (user) | Open |
+| OD-02 | Which fields define an "equivalent" replay (proposal: `customerId`, `serviceCode`, `description` after trimming)? | 02 | Open |
+| OD-03 | Database initialization: `dotnet ef database update` vs automatic migration at API startup in Development? | 01 | Open |
+| OD-04 | Persistence tests: SQLite in-memory (enforces UNIQUE) vs LocalDB? | 02 | Open |

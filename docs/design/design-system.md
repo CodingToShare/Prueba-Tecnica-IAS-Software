@@ -1,142 +1,147 @@
 # Design System — Service Requests Portal
 
-Implementation contract for the React portal. Small on purpose: one screen, plain CSS, custom properties.
+The visual and interaction contract for the React portal (`frontend/service-requests-web`).
 
-## Origin
+## 1. Visual Reference vs Implementation Contract
 
-Adapted from the visual language of a previous project's design system v3 (navy `#1E3A5F` primary, Plus Jakarta Sans,
-light surfaces, restrained shadows, semantic tokens, accessibility-first states).
-The canonical HTML reference of that system (`design-system-v3.html`) and its full contract were **not available**;
-only its rules were. Therefore:
+| | Visual reference | Implementation contract |
+| --- | --- | --- |
+| Artifact | [`reference/design-system-v3.html`](reference/design-system-v3.html) — open it in a browser | This document |
+| Role | Canonical visual sample: the look and feel to match | Binding rules for this product |
+| Defines | Palette, typography, spacing, radii, shadows, buttons, fields, panels, badges, alerts, tables, segmented filter, states, focus/hover/active/disabled | Token subset, request-status semantics, submit-feedback mapping, layout, states, accessibility, responsive rules, validation |
+| Does **not** define | Requirements, domain terms, data, navigation | — |
 
-- **Taken from the reference:** primary navy `#1E3A5F`, Plus Jakarta Sans, light surfaces, restrained shadows,
-  gradient only on the brand bar, semantic tokens, color never the only carrier of meaning, visible focus,
-  responsive validation at ~1440/768/390 px.
-- **Derived for this product (assumption):** every other token value below, chosen for WCAG AA contrast (≥ 4.5:1 for text).
-- If the original HTML reference is provided later, align the token values to it through a recorded decision.
+The reference is design system v3 (Energy Management edition) from a previous project of the same author. Its domain
+content (meters, anomalies, KPIs, charts) and Spanish sample values are **illustrative** and irrelevant here: only its
+**visual language** is reused. The file is kept unmodified; when the two differ, this document wins.
 
-## Tokens (`src/styles/tokens.css`)
+## 2. Visual Direction (Adopted From The Reference)
+
+- **Typography:** Plus Jakarta Sans 400–800, Inter and system sans-serif fallbacks. Headings 700–800 with slight
+  negative tracking; small bold labels; uppercase only in table headers and group labels; tabular numerals for dates/counts.
+- **Primary:** navy `#1E3A5F` is the single primary interactive color (hover `#16314F`, active `#0F2238`, soft `#EAEFF5`,
+  ring `rgba(30,58,95,.28)`).
+- **Surfaces:** page `#F5F6FB`, white panels, muted `#F3F5FA` for table headers, subtle borders, restrained layered
+  shadows, generous spacing, radii 10 / 14 / 20 / 26 px.
+- **Shell:** navy brand bar (see §6). Only gradient allowed: navy → navy-900, and only on the brand bar.
+
+## 3. Tokens (`src/styles/tokens.css`)
+
+Copied from the reference `:root`, limited to what this product uses. Components consume tokens, never raw values.
 
 ```css
 :root {
-  /* Brand */
-  --color-primary: #1E3A5F;
-  --color-primary-hover: #162D4A;
-  --color-primary-soft: #E8EEF5;
-  --gradient-brand: linear-gradient(135deg, #1E3A5F 0%, #2B5486 100%); /* header only */
+  /* Action */
+  --brand-primary: #1e3a5f; --brand-primary-hover: #16314f; --brand-primary-active: #0f2238;
+  --brand-primary-soft: #eaeff5; --brand-primary-ring: rgba(30, 58, 95, .28);
+  --navy: #1e3a5f; --navy-900: #0f2238;
 
-  /* Surfaces & lines */
-  --color-bg: #F5F7FA;
-  --color-surface: #FFFFFF;
-  --color-border: #DDE3EA;
+  /* Neutrals */
+  --color-heading: #11203a; --color-text: #28324a; --color-text-muted: #5d6880;
+  --color-text-subtle: #9aa3b8;            /* placeholders/decoration only, never informative text */
+  --color-border: #e7eaf2; --color-border-strong: #d4d9e6;
+  --page-bg: #f5f6fb; --surface: #ffffff; --surface-muted: #f3f5fa;
 
-  /* Text */
-  --color-text: #1A2433;
-  --color-text-muted: #5B6B7F;
-  --color-text-inverse: #FFFFFF;
+  /* Semantic tones (text ≥ 4.5:1 on its soft background) */
+  --normal: #0f766e;        --normal-soft: #e3f4f1;
+  --informational: #1e3a5f; --informational-soft: #eaeff5;
+  --warning: #8a6100;       --warning-soft: #fcf2dd;
+  --critical: #9f1239;      --critical-soft: #fdecef;
+  --neutral: #5d6880;       --neutral-soft: #f3f5fa;
 
-  /* Request status (badge foreground / background) */
-  --status-pending-fg: #475569;    --status-pending-bg: #F1F5F9;
-  --status-processing-fg: #1D4ED8; --status-processing-bg: #EFF6FF;
-  --status-completed-fg: #15803D;  --status-completed-bg: #F0FDF4;
-  --status-failed-fg: #B91C1C;     --status-failed-bg: #FEF2F2;
+  /* Destructive: system errors only (no destructive actions exist in this product) */
+  --destructive: #dc2626; --destructive-text: #b91c1c; --destructive-soft: #fdecec;
 
-  /* Feedback banners (text / background / border) */
-  --feedback-success-fg: #166534; --feedback-success-bg: #F0FDF4; --feedback-success-border: #BBF7D0;
-  --feedback-info-fg: #1E40AF;    --feedback-info-bg: #EFF6FF;    --feedback-info-border: #BFDBFE;
-  --feedback-warning-fg: #92400E; --feedback-warning-bg: #FFFBEB; --feedback-warning-border: #FDE68A;
-  --feedback-error-fg: #991B1B;   --feedback-error-bg: #FEF2F2;   --feedback-error-border: #FECACA;
-
-  /* Typography */
-  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", Consolas, monospace; /* externalReference */
-  --text-xs: 0.75rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.25rem; --text-xl: 1.5rem;
-  --weight-regular: 400; --weight-medium: 500; --weight-semibold: 600; --weight-bold: 700;
-
-  /* Spacing, radius, elevation, focus */
-  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px;
-  --radius-sm: 6px; --radius-md: 10px; --radius-pill: 999px;
-  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08);
-  --focus-ring: 0 0 0 3px rgba(30, 58, 95, 0.35);
+  /* Shape & type */
+  --radius-sm: 10px; --radius-md: 14px; --radius-lg: 20px; --radius-xl: 26px;
+  --shadow-xs: 0 1px 2px rgba(17,32,58,.05); --shadow-sm: 0 2px 6px rgba(17,32,58,.06);
+  --shadow-md: 0 6px 20px rgba(17,32,58,.07);
+  --font-sans: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 ```
 
-Font loading: Google Fonts `<link>` (weights 400/500/600/700, `display=swap`) in `index.html`; no npm dependency.
-The system fallback keeps the UI usable offline.
+Not used (reference-only): accents (mint/sky/violet/amber), `data-quality`, chart tokens, `radius-xl`/`shadow-lg` shell.
+Font: Google Fonts `<link>` for Plus Jakarta Sans 400–800 (`display=swap`) in `index.html`; no npm dependency.
 
-## Layout
+## 4. Request Semantics
+
+Request status → reference tone (badge = color + text + shape; color is never the only carrier):
+
+| Status | Tone | Badge shape | Rationale |
+| --- | --- | --- | --- |
+| `Pending` | neutral | dashed ring | Waiting, nothing has happened yet (reference "not analyzed yet") |
+| `Processing` | informational | circle | In progress, no action required |
+| `Completed` | normal | circle | Expected healthy outcome; terminal |
+| `Failed` | critical | diamond | Needs attention: transient retries exhausted |
+
+Submit outcome → reference alert:
+
+| API result | Alert | Role | Message intent |
+| --- | --- | --- | --- |
+| 201 Created | `alert-normal` | `status` | Solicitud registrada |
+| 200 OK (replay) | `alert-informational` | `status` | Ya existía una solicitud con esta referencia; se muestra la existente (no se duplicó) |
+| 409 Conflict | `alert-warning` | `alert` | La referencia ya existe con datos diferentes |
+| 400 Validation | field errors + `alert-error` summary | `alert` | Corrige los campos marcados |
+| Network / 5xx | `alert-error` + "Reintentar" | `alert` | No se pudo contactar el servicio |
+
+Rules (from the reference):
+- `critical` (a business state needing attention) and `destructive` (system error) are separate tokens; never swap them.
+- Danger styling is never used just to make something look important.
+
+## 5. Components (reference classes, plain CSS)
+
+| Pattern | Reference class | Use here |
+| --- | --- | --- |
+| Panel | `.panel`, `.panel-head`, `.panel-body` | "Nueva solicitud" and "Solicitudes" containers |
+| Field | `.field` (label above, `.hint`, `.field.error`) | 4 form fields; error hint in `--destructive-text` |
+| Button | `.btn-primary` (+ `.spinner` while sending), `.btn-secondary`, `.btn-outline`, `.btn-sm` | Register (primary, one per screen), Refresh / Retry (secondary/outline) |
+| Segmented filter | `.segmented` + `aria-pressed` | Todas / Pending / Processing / Completed / Failed |
+| Table | `.tbl-wrap`, `table.tbl`, `table.stack` + `data-label` | Request list; stacked labeled rows ≤ 640 px; row hover `primary-soft` |
+| Badge | `.badge` + `.badge-{neutral\|informational\|normal\|critical}` | Status column |
+| Alert | `.alert` + `.alert-{normal\|informational\|warning\|error}` | Submit feedback, load error |
+| States | `.state`, `.skel`, `.glyph` | Loading skeleton, empty, no results for filter (with "Ver todas"), error with retry |
+| Utilities | `.sr-only`, `.skip-link`, `:focus-visible` outline | Accessibility |
+
+Not used: sidebar navigation, KPI cards, queue, progress/steps, story/evidence, charts, search, card hover lift.
+
+## 6. Layout
 
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│ Header (gradient-brand): "Portal de solicitudes" + subtitle  │
-├──────────────────────────────────────────────────────────────┤
-│ ┌─ Nueva solicitud (card) ─┐ ┌─ Solicitudes (card) ────────┐ │
-│ │ externalReference        │ │ [Todas][Pending][Processing]│ │
-│ │ customerId               │ │ [Completed][Failed] [↻]     │ │
-│ │ serviceCode              │ │ table: ref | customer |     │ │
-│ │ description (textarea)   │ │ service | status | updated  │ │
-│ │ [Registrar solicitud]    │ │                             │ │
-│ │ feedback banner          │ │                             │ │
-│ └──────────────────────────┘ └─────────────────────────────┘ │
-└──────────────────────────────────────────────────────────────┘
+┌ brand bar (navy gradient) ─ "Portal de solicitudes" ───────────────────┐
+├────────────────────────────────────────────────────────────────────────┤
+│ page title + subtitle                                  [↻ Actualizar]  │
+│ ┌ panel: Nueva solicitud ─┐ ┌ panel: Solicitudes ─────────────────────┐ │
+│ │ externalReference       │ │ [Todas|Pending|Processing|Completed|    │ │
+│ │ customerId              │ │  Failed]                                │ │
+│ │ serviceCode             │ │ Referencia | Cliente | Servicio |       │ │
+│ │ description (textarea)  │ │ Estado | Actualizada                    │ │
+│ │ [Registrar solicitud]   │ │                                         │ │
+│ │ alert (submit outcome)  │ │                                         │ │
+│ └─────────────────────────┘ └─────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-- Max content width 1200 px, `--space-6` gutters.
-- ≥ 1024 px: two columns (form ~360 px, list fills the rest). < 1024 px: stacked, form first.
-- ≤ 640 px: filter buttons wrap; table keeps columns and scrolls horizontally inside `.table-wrapper` (`overflow-x: auto`).
+- Content max width 1180 px (reference `.wrap`), page background `--page-bg`.
+- ≥ 980 px: two columns (form ~380 px, list fills the rest). < 980 px: stacked, form first.
+- ≤ 720 px: tighter padding (reference). ≤ 640 px: table becomes stacked labeled rows; filter wraps.
+- **Recorded deviation:** the reference shell has a navy sidebar with navigation. This product has one screen, so it
+  uses a navy brand bar instead (same gradient, no navigation items) — the reference forbids adding navigation the
+  product does not need.
 
-## Components
+## 7. States And Accessibility
 
-| Component | Contract |
-| --- | --- |
-| Card | `--color-surface`, `1px solid --color-border`, `--radius-md`, `--shadow-card`, padding `--space-6` |
-| Primary button | bg `--color-primary`, hover `--color-primary-hover`, text inverse, `--radius-sm`; disabled = 60% opacity + `cursor: not-allowed`; label changes to "Registrando…" while sending |
-| Secondary button (refresh, retry) | surface bg, border, primary text |
-| Input / textarea | border `--color-border`, `--radius-sm`; focus `--focus-ring`; invalid = error border + message below (`--feedback-error-fg`, `--text-sm`) |
-| Status filter | button group, `aria-pressed` on the active one; active = `--color-primary-soft` bg + primary text |
-| Status badge | pill, `--text-xs` semibold, glyph + label, colors from `--status-*` |
-| Feedback banner | `role="status"` (success/info) or `role="alert"` (warning/error), colors from `--feedback-*` |
-| Table | header `--text-xs` uppercase muted; rows separated by border; `externalReference` in `--font-mono` |
+- States: loading (skeleton rows, `aria-busy`), empty ("Aún no hay solicitudes"), no results for the active filter
+  (with "Ver todas"), recoverable error with "Reintentar", sending (primary button disabled + spinner + "Registrando…").
+- WCAG 2.1 AA contrast (reference tones measured 4.82–9.95:1); visible focus (3 px navy outline / ring);
+  full keyboard operation; `<header>`/`<main>` landmarks; skip link; labeled controls; `aria-invalid` + `aria-describedby`
+  for field errors; `prefers-reduced-motion` disables spinner/skeleton animation.
+- UI copy in Spanish (assumption A-01); status labels keep the challenge names (Pending, Processing, Completed, Failed).
 
-## Semantic Mapping
+## 8. Visual Validation (Phase 04 exit)
 
-Request status (badge):
-
-| Status | Glyph | Label | Tokens |
-| --- | --- | --- | --- |
-| Pending | ◷ | Pending | `--status-pending-*` |
-| Processing | ↻ (spins unless reduced motion) | Processing | `--status-processing-*` |
-| Completed | ✓ | Completed | `--status-completed-*` |
-| Failed | ✕ | Failed | `--status-failed-*` |
-
-Submit outcome (banner):
-
-| API result | Banner | Message intent |
-| --- | --- | --- |
-| 201 Created | success | Request registered |
-| 200 OK (replay) | info | A request with this reference already existed; showing the existing one (no duplicate created) |
-| 409 Conflict | warning | Reference already used with different data |
-| 400 Validation | error + field messages | Fix highlighted fields |
-| Network / 5xx | error + retry | Could not reach the service |
-
-## UI States
-
-| State | Treatment |
-| --- | --- |
-| Loading list | muted "Cargando solicitudes…" row, container `aria-busy="true"` |
-| Empty | "No hay solicitudes" (or "No hay solicitudes en estado X" when filtered) + hint to create one |
-| Error | error banner with "Reintentar" button |
-| Sending | submit disabled, label "Registrando…" |
-| Success | banner per table above; list refreshes |
-
-## Language
-
-UI copy in Spanish (internal Spanish-speaking portal — assumption). Status labels keep the challenge's names
-(Pending, Processing, Completed, Failed) so UI, API and documentation use one vocabulary.
-
-## Validation (Phase 04 exit)
-
-- Devtools at ~1440, ~768, ~390 px: hierarchy, spacing, no page-level horizontal overflow.
+Lightweight, review-based, not pixel-perfect:
+- Review at ~1440, ~768 and ~390 px (browser devtools): hierarchy, typography, spacing, surfaces, form, buttons,
+  table/stacked rows, badges, alerts, states, no page-level horizontal overflow.
+- Compare side by side with the reference HTML for visual language (not content).
 - Keyboard-only pass with visible focus.
-- Contrast: text tokens meet AA on their backgrounds.
-- Record any deviation from this contract in the Phase 04 evidence.
+- Record deviations in the roadmap Phase 04 evidence.

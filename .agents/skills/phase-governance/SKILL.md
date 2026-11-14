@@ -34,7 +34,10 @@ Only the explicitly authorized phase runs, on a verified baseline, inside its sc
 - UI phases: design validation against `docs/design/design-system.md` (widths, states, keyboard).
 - A phase with a known blocking failure is not Complete. Never a subject-only checkpoint commit.
 - Review the actual diff (`code-review` skill for later phases).
-- Update roadmap status + evidence (commands run, results). Never fabricate elapsed times.
+- Update roadmap status + evidence (commands run, results) and the matching rows of
+  `docs/requirements-traceability.md`. Resolve the phase's open decisions (OD-xx) with date and rationale.
+  Never fabricate elapsed times.
+- Apply the Definition of Done in AGENTS.md §8 (N/A only with a reason).
 - Commit (when authorized): Conventional Commit subject, blank line, body starting `Phase NN:`.
   `git status` → `git diff --check` → `git diff` → commit → `git log -1 --format=%B`.
 - No assistant attribution in commits. No remote, no push.

@@ -25,7 +25,9 @@ Working in `frontend/service-requests-web`.
 - Disable submit while sending (reduces accidental double submits; backend idempotency is still the guard).
 - Client-side `required`/`maxLength` mirror the API, but the server stays authoritative.
 - Visuals per `docs/design/design-system.md` via the `ui-design-system` skill: plain CSS, `src/styles/tokens.css`
-  as the single source of visual values, no extra design work beyond that contract.
+  (values from the reference `:root`) as the single source of visual values, component CSS adapted from the
+  reference HTML patterns; no extra design work beyond that contract.
+- Status filter as the reference segmented control (`aria-pressed`); table uses `data-label` for stacked rows ≤ 640 px.
 - TypeScript strict; no `any` as an escape hatch; API types mirror the backend DTOs.
 - Suggested structure: `src/api/` (client + types), `src/components/` (form, filter, table, badge, banner), `src/styles/`.
 

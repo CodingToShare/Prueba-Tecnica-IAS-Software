@@ -29,11 +29,11 @@ Also required: 3–5 lines on what would change with NoSQL; how the Worker becom
 
 ## Visual Language
 
-Contract: `docs/design/design-system.md` (skill `ui-design-system`). Navy `#1E3A5F` primary, Plus Jakarta Sans,
-light surfaces, restrained shadows, gradient only in the header, semantic CSS tokens for request status and submit
-feedback, status shown with text + glyph (never color only), visible focus, validated at ~1440/768/390 px.
-Adapted from a previous project's design system v3; its HTML reference was not available, so non-brand token values
-are derived (documented assumption).
+Contract: `docs/design/design-system.md` (skill `ui-design-system`); canonical visual reference:
+`docs/design/reference/design-system-v3.html` (design system v3 from a previous project; visual language only, its
+domain content is illustrative; never modified). Navy `#1E3A5F` primary, Plus Jakarta Sans, light surfaces, restrained
+shadows, navy gradient only on the brand bar. Status tones: Pending → neutral, Processing → informational,
+Completed → normal, Failed → critical; badges carry color + text + shape. Validated at ~1440/768/390 px.
 
 ## Repository Target
 
@@ -43,7 +43,9 @@ src/ServiceRequests.Core | .Infrastructure | .Api | .Worker
 tests/ServiceRequests.Tests
 frontend/service-requests-web
 docs/design/design-system.md     visual contract
-docs/technical-decisions.md      decision log
+docs/design/reference/           canonical visual reference (HTML)
+docs/technical-decisions.md      decisions, assumptions, open decisions
+docs/requirements-traceability.md  challenge requirement → phase → evidence
 docs/phases/roadmap.md           phases, status, evidence
 ```
 

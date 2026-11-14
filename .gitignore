@@ -35,5 +35,6 @@ coverage/
 Thumbs.db
 .DS_Store
 
-# Local reference material (not part of the solution)
+# Local reference material (not part of the solution; relevant parts are adapted into the repo)
 .agents.zip
+docs.zip

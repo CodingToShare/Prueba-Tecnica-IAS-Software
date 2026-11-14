@@ -19,8 +19,9 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 
 ## Phase Scopes
 
-**00 — Governance.** AGENTS.md, CLAUDE.md, project context, 10 skills (incl. `ui-design-system`), design contract,
-roadmap, technical decisions, .gitignore. No product code.
+**00 — Governance.** AGENTS.md, CLAUDE.md, project context, 10 skills (incl. `ui-design-system`), design contract +
+reference HTML, roadmap, technical decisions (+ assumptions, open decisions), requirements traceability, .gitignore.
+No product code.
 
 **01 — Foundation + persistence.** Solution + 4 src projects + test project; project references; `ServiceRequest` entity
 with guarded transitions (+ transition tests); DbContext, mapping, UNIQUE `ExternalReference`, `Status` index; initial
@@ -33,17 +34,34 @@ unique-violation race handling, CORS for frontend dev origin; idempotency + vali
 processor (claim → provider → Completed/Failed); Polly bounded retry on transient only; BackgroundService host with
 Windows Service support; startup resume of orphaned `Processing` requests; structured logs; retry/exhaustion tests.
 
-**04 — React portal.** Vite React TS app styled per `docs/design/design-system.md` (tokens.css, header, form card,
-filter, table, status badges, feedback banners); loading/empty/error/success; build passes; design validation at
-~1440/768/390 px + keyboard pass.
+**04 — React portal.** Vite React TS app styled per `docs/design/design-system.md` using the reference HTML patterns
+(tokens.css, brand bar, form panel, segmented filter, stacked table, status badges, submit alerts);
+loading/empty/no-results/error/sending states; build passes; design review at ~1440/768/390 px side by side with
+`docs/design/reference/design-system-v3.html` + keyboard pass.
 
 **05 — Test hardening.** Fill gaps in highest-risk scenarios (TheoryData/MemberData where readable); full regression.
 
 **06 — Documentation + legacy review.** README run instructions, test note, Windows Service approach, NoSQL alternative,
 assumptions, trade-offs, legacy WebForms/MVC review, AI usage note, deferred work.
 
-**07 — Final validation.** Clean build, full tests, frontend build, end-to-end smoke (create → Worker → Completed),
-final diff review, delivery commit.
+**07 — Final validation.** Run the delivery checklist below, final diff review, delivery commit.
+
+## Delivery Checklist (Phase 07)
+
+Every item has a command or a place to look; record results in Phase 07 evidence.
+
+- [ ] `git status --short` shows no unintended changes; no remote/push.
+- [ ] No secrets or local artifacts tracked:
+      `git ls-files | grep -iE '(^|/)\.env$|\.pfx$|\.key$|appsettings\..*\.local\.json|bin/|obj/|node_modules/|TestResults/'` prints nothing.
+- [ ] Committed config has no passwords: `git grep -niE 'password=|pwd=' -- '*.json'` prints nothing.
+- [ ] Clean database path works: drop/recreate DB → apply migrations exactly as README says.
+- [ ] `dotnet build ServiceRequests.sln` and `dotnet test` pass (report counts).
+- [ ] `npm ci` + `npm run build` pass in `frontend/service-requests-web`.
+- [ ] Manual smoke, following README: create → 201; same payload → 200 (no duplicate row); different payload → 409;
+      Worker moves Pending → Completed (and a forced transient failure path → Failed); UI filter shows each status.
+- [ ] Requirements traceability: every row Verified or Deferred with reason.
+- [ ] README instructions, test note, NoSQL paragraph, Windows Service, assumptions, limitations, legacy review and
+      AI usage note match the final behavior.
 
 ## Baseline Validation (grows per phase)
 
@@ -72,6 +90,14 @@ final diff review, delivery commit.
   documentation categories + README outline, security/config rules, dependency pinning, tracked-governance rule.
   Discarded as not applicable: Go/PostgreSQL/Next.js/TanStack/ECharts specifics, analytics/LLM skills, Docker, CI,
   Prometheus metrics, Copilot entry file.
+- **Follow-up 2 (`docs.zip` provided):** the original design files were found. `docs/design/reference/design-system-v3.html`
+  copied unmodified (SHA-256 identical to the source; inline JS reviewed: menu/filter/chart demo only, no network calls).
+  `docs/design/design-system.md` rewritten from the original contract with the real reference tokens (replacing the
+  derived values), request-status → tone mapping, submit-outcome → alert mapping, component subset and a recorded
+  deviation (brand bar instead of sidebar). Also adapted from `docs.zip`: Definition of Done categories (AGENTS.md §8),
+  requirements traceability matrix (`docs/requirements-traceability.md`), delivery checklist (above), assumptions /
+  open-decisions registers, and the decision format required by challenge §6 (alternatives + risks were missing).
+  Not adopted: ADR directory, per-phase documents, OpenAPI file, Playwright/axe, Compose/CI, product/AI docs of the other domain.
 
 ## Unfinished Work Template
 

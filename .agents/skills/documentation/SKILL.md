@@ -13,7 +13,10 @@ Updating `README.md`, `docs/technical-decisions.md`, the roadmap evidence, or wr
 
 - **README**: prerequisites; reproducible steps for database, API, Worker, frontend, tests; test scenario note;
   Windows Service deployment approach; NoSQL alternative (3–5 lines); assumptions; known limitations; AI usage note.
-- **technical-decisions.md**: Context · Decision · Why · Trade-off · Future evolution (+ validation evidence).
+- **technical-decisions.md**: Context · Alternatives · Decision · Trade-off · Risks · Validation · Future evolution
+  (challenge §6 format), plus Assumptions (A-xx) and Open Decisions (OD-xx) registers.
+- **requirements-traceability.md**: evidence column filled only with checks actually run; status Verified/Deferred.
+- **Demo walkthrough** (README): create → replay (200) → conflict (409) → Worker processes → filter by status.
 - **Legacy review**:
   - WebForms: SQL injection via concatenation → parameterized `SqlCommand` (`@customer`); also dispose reader/command.
   - MVC: `Find(id)` null → 404; unrestricted `status` string → validate against enum/allowed transitions;

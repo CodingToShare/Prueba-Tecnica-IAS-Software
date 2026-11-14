@@ -1,52 +1,54 @@
 ---
 name: ui-design-system
-description: Apply the approved navy / Plus Jakarta Sans visual language and the request-status semantic tokens from docs/design/design-system.md to every user-facing change.
+description: Apply the design system v3 visual language (navy #1E3A5F, Plus Jakarta Sans, reference tokens and component patterns) and the request-status semantics from docs/design/design-system.md, validated against the HTML reference.
 ---
 
 # UI Design System
 
 ## Use When
 
-Creating or modifying anything user-facing in `frontend/service-requests-web`: layout, header, form, table, status badges,
-filter, feedback banners, loading/empty/error states, responsive behavior.
+Creating or modifying anything user-facing in `frontend/service-requests-web`: brand bar, layout, form, table,
+status badges, segmented filter, alerts, loading/empty/error states, responsive behavior.
 
 ## Read First
 
 1. `AGENTS.md`
-2. `docs/design/design-system.md` (implementation contract: tokens, components, states)
-3. `react-frontend` skill
+2. `docs/design/design-system.md` (implementation contract — wins on conflict)
+3. `docs/design/reference/design-system-v3.html` (canonical visual reference — open it in a browser; reuse its CSS patterns)
+4. `react-frontend` skill
 
 ## Responsibilities
 
-Compose the single portal screen from the semantic tokens and the few primitives in the contract so it looks like one
-coherent, professional internal tool and expresses request-status meaning (Pending, Processing, Completed, Failed)
-and submit outcomes (created, replayed, conflict, invalid).
+Build the single portal screen from the reference tokens and patterns so it matches the v3 visual language and
+expresses request-status meaning (Pending → neutral, Processing → informational, Completed → normal, Failed → critical)
+and submit outcomes (201 normal, 200 informational, 409 warning, 400/5xx error).
 
 ## Required Rules
 
-- All colors, font, spacing, radius and shadow come from CSS custom properties defined once in `src/styles/tokens.css`.
-  No raw hex values in components.
-- Plus Jakarta Sans with a system-font fallback; the UI must stay readable if the web font fails to load.
-- Navy `#1E3A5F` is the primary/brand color; the navy gradient is allowed only in the app header.
-- Status is never conveyed by color alone: every badge has text and a glyph.
-- Keep status semantics separate from feedback semantics and from destructive actions (there are none in this product).
-- Required states: loading, empty, recoverable error with retry, disabled/sending, success feedback.
-- Interaction states: hover, active, disabled, and always-visible `:focus-visible` ring.
-- Forms: explicit `<label>` per field, validation messages next to the field, `aria-invalid` + `aria-describedby`.
-- Keyboard-only use must work (form → submit → filter → refresh → table).
-- Responsive at ~1440, ~768 and ~390 px: no page-level horizontal overflow; the table scrolls inside its own container.
-- Respect `prefers-reduced-motion`; motion only for the Processing indicator.
+- Tokens copied from the reference `:root` into `src/styles/tokens.css`; components use tokens only, no raw hex.
+- Reuse the reference CSS patterns (`.panel`, `.field`, `.btn-*`, `.spinner`, `.segmented`, `.tbl`/`.stack`, `.badge-*`,
+  `.alert-*`, `.state`, `.skel`, `.skip-link`, `:focus-visible`) — adapt, do not reinvent.
+- Badges keep color + text + shape (dashed ring / circle / diamond); color is never the only carrier.
+- `critical` (Failed state) and `destructive` (system errors) stay separate.
+- One primary action per screen: "Registrar solicitud".
+- States: loading skeleton, empty, no results for filter, recoverable error with retry, sending (disabled + spinner).
+- Forms: label above field, error hint below, `aria-invalid` + `aria-describedby`.
+- Keyboard-only use works; focus always visible; skip link to `main`.
+- Responsive: two columns ≥ 980 px, stacked below; table → stacked labeled rows ≤ 640 px; no page-level horizontal overflow.
+- `prefers-reduced-motion` respected.
+- Navy brand bar instead of the reference sidebar (one screen, no navigation) — documented deviation.
 
 ## Prohibited
 
-Component libraries, CSS frameworks, a second palette, gradients outside the header, heavy shadows, gratuitous animation,
-dark mode work, navigation or modules the product does not need, spending more than the Phase 04 timebox on polish.
+Modifying the reference HTML; copying its domain content (meters, anomalies, KPIs, charts); component libraries or CSS
+frameworks; a second palette; gradients outside the brand bar; heavy shadows; gratuitous motion; navigation items the
+product does not need; exceeding the Phase 04 timebox for polish.
 
 ## Completion Checklist
 
-- [ ] Tokens file is the only source of visual values
-- [ ] Status badges: text + glyph + token colors
-- [ ] All UI states visible and reachable
-- [ ] Checked at ~1440 / ~768 / ~390 px (browser devtools), no horizontal page overflow
+- [ ] `tokens.css` mirrors the contract; no raw colors in components
+- [ ] Status badges and submit alerts follow the semantic mapping
+- [ ] All UI states reachable
+- [ ] Reviewed at ~1440 / ~768 / ~390 px and side by side with the reference HTML
 - [ ] Keyboard pass with visible focus
-- [ ] Deviations from the contract recorded in the roadmap Phase 04 evidence
+- [ ] Deviations recorded in roadmap Phase 04 evidence
