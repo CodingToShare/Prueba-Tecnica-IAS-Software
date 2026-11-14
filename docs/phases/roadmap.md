@@ -41,7 +41,7 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 06.4 | Final evidence / Phase 06 closure | 2 min | Complete |
 | 07 | Final validation and delivery | 5 min | In Progress |
 | 07.1 | Final release gate | 2 min | Complete |
-| 07.2 | Git/security/history hygiene | 1 min | Not Started |
+| 07.2 | Git/security/history hygiene | 1 min | Complete |
 | 07.3 | Public GitHub publication | 1 min | Not Started |
 | 07.4 | Post-publication verification | 1 min | Not Started |
 | — | Contingency reserve | 5 min | — |
@@ -794,6 +794,17 @@ Every item has a command or a place to look; record results in Phase 07 evidence
 - Traceability: TC-06 and TC-07 Verified (no Docker/cloud/CI files; executable path validated; limitations documented);
   D-01 waits for the public repository (07.3/07.4). All other requirements already Verified with test/manual evidence.
 - Timing: see Phase 07.1 commit timestamp.
+
+### Phase 07.2 — Complete (Phase 07 In Progress)
+
+- Tracked files (100): source, tests, migrations, frontend sources and lock file, `.env.example`, delivery docs and
+  agent governance; no `bin/`, `obj/`, `node_modules/`, `dist/`, archives, screenshots, logs, `.env` or local settings.
+- Ignored locally: build outputs and `node_modules`/`dist`; reference ZIPs and `.claude/settings.local.json` covered by
+  `.gitignore`; `docs/ai/ai-usage.md`, migrations and `.env.example` remain tracked.
+- History: no secrets, machine paths or private files in any revision; no assistant trailers or temporary commit
+  messages; largest blob ~70 KB (roadmap). No rewrite needed; commits and timestamps preserved.
+- Branch renamed `master` → `main` (reference rename only; HEAD unchanged).
+- Timing: see Phase 07.2 commit timestamp.
 
 ## Unfinished Work Template
 
