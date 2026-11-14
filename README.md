@@ -1,29 +1,29 @@
 # Service Requests Portal
 
-Internal portal for a field-services company: requests are registered through an API and later processed in the
+Internal portal for a field-services company: requests are registered through an API and processed in the
 background against an external provider. Users retry when the portal feels slow and the provider fails transiently,
 so the same business operation (`externalReference`) must never create duplicate effects, and a `Completed`
 request never moves back.
 
-> **Status:** Phases 00–02 complete — domain, SQL Server persistence and the idempotent HTTP API are implemented and
-> tested. Background Worker (Phase 03) and React portal (Phase 04) are **not implemented yet**.
-> Progress and evidence: [`docs/phases/roadmap.md`](docs/phases/roadmap.md).
+> **Status:** Phases 00–03 complete — domain, SQL Server persistence, idempotent HTTP API and the background Worker
+> (retries, startup recovery, Windows Service ready) are implemented and tested. The React portal (Phase 04) is
+> **not implemented yet**. Progress and evidence: [`docs/phases/roadmap.md`](docs/phases/roadmap.md).
 
 ## Architecture
 
 ```text
 [React + TS (Vite) — Phase 04, pending] --HTTP--> ASP.NET Core Web API --> ServiceRequests.Core
                                                                        |--> EF Core / SQL Server
-                                     [.NET Worker + Polly — Phase 03, pending] --> simulated provider
+                                     .NET Worker (BackgroundService) --+--> Polly retry --> simulated provider
 ```
 
 | Project | Responsibility |
 | --- | --- |
-| `src/ServiceRequests.Core` | `ServiceRequest` entity and state transitions, replay rule, `ServiceRequestService`, repository interface. No framework packages. |
-| `src/ServiceRequests.Infrastructure` | EF Core `DbContext`, mapping, migrations, repository (SQL Server duplicate-key translation), DI registration. |
+| `src/ServiceRequests.Core` | `ServiceRequest` entity and state transitions, replay rule, `ServiceRequestService`, repository and provider contracts. No framework packages. |
+| `src/ServiceRequests.Infrastructure` | EF Core `DbContext`, mapping, migrations, repository (SQL Server duplicate-key translation), simulated provider, DI registration. |
 | `src/ServiceRequests.Api` | Controller, DTOs, ProblemDetails, CORS. |
-| `src/ServiceRequests.Worker` | Host only (no processing yet — Phase 03). |
-| `tests/ServiceRequests.Tests` | xUnit + Moq unit tests, LocalDB integration tests, HTTP tests (`WebApplicationFactory`). |
+| `src/ServiceRequests.Worker` | `RequestProcessingWorker` (hosted loop), `ServiceRequestProcessor`, Polly pipeline, Windows Service hosting. |
+| `tests/ServiceRequests.Tests` | xUnit + Moq unit tests, LocalDB integration tests, functional HTTP and Worker tests. |
 
 Dependencies point inward: Api/Worker → Infrastructure → Core. Decisions: [`docs/technical-decisions.md`](docs/technical-decisions.md).
 
@@ -36,7 +36,8 @@ Dependencies point inward: Api/Worker → Infrastructure → Core. Decisions: [`
 
 ## Database initialization
 
-Explicit EF Core migrations (TD-16); the API never migrates the database on startup. From the repository root:
+Explicit EF Core migrations (TD-16); neither the API nor the Worker migrates the database on startup. From the
+repository root:
 
 ```bash
 dotnet tool restore
@@ -51,19 +52,31 @@ This creates `ServiceRequestsDb` on `(localdb)\MSSQLLocalDB` with the migrations
 ```bash
 dotnet restore
 dotnet build ServiceRequests.sln
-dotnet run --project src/ServiceRequests.Api        # http://localhost:5164 (launch profile "http", Development)
+dotnet run --project src/ServiceRequests.Api        # terminal 1 — http://localhost:5164 (launch profile "http")
+dotnet run --project src/ServiceRequests.Worker     # terminal 2 — processes Pending requests
 dotnet test ServiceRequests.sln
 ```
 
+Walkthrough with both processes running (default configuration):
+
+```bash
+curl -s -H "Content-Type: application/json" http://localhost:5164/api/requests \
+  -d '{"externalReference":"REQ-1","customerId":"CUST-01","serviceCode":"INST","description":"Install service"}'
+curl -s "http://localhost:5164/api/requests?status=Completed"     # REQ-1 appears after one simulated retry
+```
+
+The Worker log shows the claim, one transient failure (`attempt 1`) and `Completed REQ-1 after 2 attempt(s)`.
+A request with `"serviceCode":"UNSUPPORTED"` ends `Failed` after one call.
+
 | Suite | Needs | Covers |
 | --- | --- | --- |
-| Unit (`Domain/`, `Application/`) | nothing | state transitions (Completed terminal, Failed final), invariants, timestamps, replay rule, idempotent create incl. simulated UNIQUE race (Moq) |
-| Integration (`Persistence/`) | LocalDB | migrations, UNIQUE and case-insensitive identity, timestamps round trip, SQL filter and ordering |
-| Functional HTTP (`Api/`) | LocalDB | 201 / 200 replay / case-variant replay / 409 / 400 / status filter through the real pipeline |
+| Unit (`Domain/`, `Application/`, `Worker/` processor, provider, loop) | nothing | transitions (Completed terminal, Failed final), invariants, timestamps, replay rule, idempotent create incl. simulated UNIQUE race, retry/exhaustion/permanent/unexpected/cancellation, claim before provider call, startup recovery |
+| Integration (`Persistence/`, `Worker/WorkerProcessingTests` processor cases) | LocalDB | migrations, UNIQUE and case-insensitive identity, timestamps, SQL filter and ordering, processing persisted to SQL Server |
+| Functional (`Api/`, `Worker/WorkerProcessingTests` host cases) | LocalDB | 201 / 200 / 409 / 400 / filter / 500 through the real pipeline; API POST → Worker host → GET observes Completed (with retries) or Failed |
 
-Persistence and HTTP tests create a throwaway database `ServiceRequestsDb_Tests_<guid>` from the migrations and drop
-it afterwards. To use another SQL Server, set `SERVICEREQUESTS_TEST_SQLSERVER` to a connection string without a
-database name. Last validated run: 71 passed, 0 failed, 0 skipped.
+Persistence, HTTP and Worker tests create throwaway databases `ServiceRequestsDb_Tests_<guid>` from the migrations and
+drop them afterwards. To use another SQL Server, set `SERVICEREQUESTS_TEST_SQLSERVER` to a connection string without a
+database name. Last validated run: 100 passed, 0 failed, 0 skipped.
 
 ## API
 
@@ -73,14 +86,10 @@ database name. Last validated run: 71 passed, 0 failed, 0 skipped.
 | `GET` | `/api/requests` | all requests, newest first (`createdAt` desc, then `id` desc) |
 | `GET` | `/api/requests?status=Pending` | only that status (`Pending`, `Processing`, `Completed`, `Failed`; case-insensitive); unknown value → `400` |
 
-```bash
-curl -i -H "Content-Type: application/json" http://localhost:5164/api/requests \
-  -d '{"externalReference":"REQ-1","customerId":"CUST-01","serviceCode":"INST","description":"Install service"}'
-```
-
 Response body (201 and 200): `id`, `externalReference`, `customerId`, `serviceCode`, `description`, `status`
 (string), `failureReason`, `createdAt`, `updatedAt`. Errors are RFC 7807 `application/problem+json`; unexpected
-failures return a generic 500 without stack traces or SQL details. Clients cannot set id, status or timestamps.
+failures return a generic 500 without stack traces, SQL or connection details. Clients cannot set id, status or
+timestamps.
 
 ## Idempotency semantics
 
@@ -94,14 +103,80 @@ failures return a generic 500 without stack traces or SQL details. Clients canno
   Server rejects the insert (2601/2627), the repository reports it, and the service re-reads the winner and applies
   the same rule (TD-05, TD-06).
 
+## Background processing (Worker)
+
+```text
+Pending ──claim (persisted)──► Processing ──provider ok──► Completed (terminal)
+                                   │
+                                   ├─ transient failure → retry (Polly) → Completed, or Failed when retries run out
+                                   ├─ permanent failure → Failed (no retry)
+                                   └─ unexpected error  → logged; stays Processing; resumed on next Worker start
+```
+
+- **Claim before call:** the request is saved as `Processing` before the provider is called; if that save fails, the
+  provider is not called.
+- **Retries:** only the modeled `TransientProviderException` is retried. `Worker:MaxRetryAttempts` = 2 **retries**,
+  i.e. at most **3 provider calls** (attempts logged 1–3), with a constant `Worker:RetryDelayMilliseconds` (200 ms).
+  `PermanentProviderException` fails at once; any other exception and host cancellation are never retried and never
+  turn a request into `Failed`.
+- **State rules:** transitions only through the entity (`MarkProcessing`, `Complete`, `Fail`); `Completed` and
+  `Failed` are final; `CreatedAt` never changes and `UpdatedAt` changes on each transition. Failure reasons are short
+  messages, never stack traces.
+- **Startup recovery:** before polling Pending requests, the Worker resumes every request left in `Processing`
+  (oldest first) from the provider call, without claiming it again. This covers a stop or crash after the claim. If
+  the database is unavailable at startup, recovery is retried every polling interval before any Pending request is
+  processed. Safety depends on the provider being idempotent by `externalReference`.
+- **Loop:** one request at a time, oldest first; a new DI scope (fresh `DbContext`) per unit of work; an error is
+  logged and the loop continues after `Worker:PollingIntervalMilliseconds` (no tight error loop); shutdown stops at
+  the next await. Once the provider has answered, the final state is saved even if shutdown was requested.
+- **Single Worker (deliberate, A-04 / TD-09):** run one instance. Several instances would need an atomic database
+  claim (conditional `UPDATE … WHERE Status = 'Pending'` or a rowversion/optimistic check) and a lease for stale
+  `Processing` rows; not implemented.
+- **Known trade-off:** a request hit by an unexpected error stays `Processing` until the next Worker start (it is not
+  retried within the same run).
+
+### Simulated provider and its limits
+
+`SimulatedExternalProvider` is deterministic: each `externalReference` fails transiently
+`ExternalProvider:TransientFailuresBeforeSuccess` times (default 1) and then succeeds; service codes listed in
+`ExternalProvider:PermanentFailureServiceCodes` (default `UNSUPPORTED`, case-insensitive) fail permanently. A reference
+that already succeeded returns success again without a second effect **while the process runs**. Its state is in
+memory only and is lost when the Worker restarts, so the simulation does not prove exactly-once delivery. A real
+provider must offer durable idempotency by `externalReference` (or an equivalent reconciliation process).
+
+### Running as a Windows Service
+
+The Worker calls `AddWindowsService` (service name `ServiceRequestsWorker`): it runs as a console app with
+`dotnet run` and as a Windows Service when started by the Service Control Manager.
+
+- **Validated:** the Worker host runs with `dotnet run`, and `dotnet publish` produces `ServiceRequests.Worker.exe`.
+- **Documented, not executed here:** service registration (requires an elevated prompt):
+
+```powershell
+dotnet publish src/ServiceRequests.Worker -c Release -o .\publish\worker
+sc.exe create ServiceRequestsWorker binPath= "C:\path\to\publish\worker\ServiceRequests.Worker.exe" start= auto
+sc.exe start ServiceRequestsWorker
+# or: New-Service -Name ServiceRequestsWorker -BinaryPathName "C:\path\to\publish\worker\ServiceRequests.Worker.exe" -StartupType Automatic
+```
+
+The service account needs access to the database (LocalDB is per-user, so a service would normally point
+`ConnectionStrings__ServiceRequests` to a SQL Server instance). Remove with `sc.exe stop` / `sc.exe delete
+ServiceRequestsWorker`.
+
 ## Configuration
 
-| Key | Default (`appsettings.json`) |
-| --- | --- |
-| `ConnectionStrings:ServiceRequests` | `Server=(localdb)\MSSQLLocalDB;Database=ServiceRequestsDb;Trusted_Connection=True` — override with the environment variable `ConnectionStrings__ServiceRequests`; startup fails if missing |
-| `Cors:AllowedOrigins` | `["http://localhost:5173"]` (planned Vite dev server; GET/POST, `Content-Type`) |
+| Key | Used by | Default (`appsettings.json`) |
+| --- | --- | --- |
+| `ConnectionStrings:ServiceRequests` | API, Worker | `Server=(localdb)\MSSQLLocalDB;Database=ServiceRequestsDb;Trusted_Connection=True` — override with `ConnectionStrings__ServiceRequests`; startup fails if missing |
+| `Cors:AllowedOrigins` | API | `["http://localhost:5173"]` (planned Vite dev server; GET/POST, `Content-Type`) |
+| `Worker:PollingIntervalMilliseconds` | Worker | `1000` (allowed 100–60000) |
+| `Worker:MaxRetryAttempts` | Worker | `2` retries → 3 calls (allowed 1–5) |
+| `Worker:RetryDelayMilliseconds` | Worker | `200` (allowed 0–10000) |
+| `ExternalProvider:TransientFailuresBeforeSuccess` | Worker | `1` (allowed 0–10) |
+| `ExternalProvider:PermanentFailureServiceCodes` | Worker | `["UNSUPPORTED"]` |
 
-No secrets are committed; LocalDB uses Windows authentication.
+Worker settings are validated on startup. No secrets are committed; LocalDB uses Windows authentication. EF Core SQL
+command logs are kept at `Warning` in both hosts.
 
 ## Current status and deferred work
 
@@ -109,13 +184,13 @@ No secrets are committed; LocalDB uses Windows authentication.
 | --- | --- |
 | Domain, persistence, migrations | Done and tested (Phase 01) |
 | Idempotent API | Done and tested (Phase 02) |
-| Worker, simulated provider, Polly retries, Windows Service | Pending — Phase 03 |
+| Worker, simulated provider, Polly retries, startup recovery, Windows Service readiness | Done and tested (Phase 03); service registration documented, not executed |
 | React portal | Pending — Phase 04 (design contract: [`docs/design/design-system.md`](docs/design/design-system.md)) |
 | NoSQL alternative note, legacy code review, final README | Pending — Phase 06 |
 
 Known items: a handled concurrent-insert race is logged by EF Core at Error level (Phase 05); rows created before
-`AddRequestTimestamps` would get `0001-01-01` timestamps (none exist). Traceability:
-[`docs/requirements-traceability.md`](docs/requirements-traceability.md).
+`AddRequestTimestamps` would get `0001-01-01` timestamps (no such rows exist); simulated provider state is not durable;
+single Worker instance only. Traceability: [`docs/requirements-traceability.md`](docs/requirements-traceability.md).
 
 ## AI usage
 

@@ -19,11 +19,11 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 02.2 | Technical/requirements review | 4 min | Complete |
 | 02.3 | Automated + functional tests | 6 min | Complete |
 | 02.4 | Documentation/evidence | 2 min | Complete |
-| 03 | Background processing and resilience | 20 min | In Progress |
+| 03 | Background processing and resilience | 20 min | Complete |
 | 03.1 | Development | 9 min | Complete |
 | 03.2 | Technical/resilience review | 3 min | Complete |
 | 03.3 | Automated + functional validation | 6 min | Complete |
-| 03.4 | Documentation/evidence | 2 min | Not Started |
+| 03.4 | Documentation/evidence | 2 min | Complete |
 | 04 | React portal | 18 min | Not Started |
 | 05 | Critical test hardening | 12 min | Not Started |
 | 06 | Documentation and legacy review | 10 min | Not Started |
@@ -447,6 +447,29 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   → total 100, passed 100, failed 0, skipped 0 (TRX). No `ServiceRequestsDb_Tests_*` databases left.
 - Worker smoke: `dotnet run --project src/ServiceRequests.Worker` → "Application started", Development; stopped.
 - Timing: see Phase 03.3 commit timestamp.
+
+### Phase 03.4 — Complete → Phase 03 Complete
+
+- README: Worker run command, processing flow, retry semantics (2 retries = at most 3 calls), simulated-provider
+  limits (in-process idempotency, not durable, no exactly-once claim), startup recovery, single-Worker trade-off,
+  Windows Service (validated vs documented), configuration table with the real keys and validated ranges.
+- Executed for the README: `dotnet publish src/ServiceRequests.Worker -c Release` (to a temp folder) →
+  `ServiceRequests.Worker.exe`; walkthrough exactly as written (`dotnet run` API on 5164 + `dotnet run` Worker; POST
+  `REQ-1` → 201; GET `?status=Completed` shows it; Worker log: claim, transient failure on attempt 1, "Completed REQ-1
+  after 2 attempt(s)"); `Worker__MaxRetryAttempts=0` → `OptionsValidationException` at startup. Row deleted, processes
+  stopped. Windows Service registration not executed (documented only).
+- `.gitignore`: `publish/` added (documented publish output folder).
+- Decisions: TD-07 and TD-08 updated (explicit retry semantics, publish/Windows Service evidence).
+- Phase 02 findings: 500 regression — closed in 03.3; StringLength before trim — fixed in 02.2 (`47b8067`),
+  regression test since 03.3; `AddRequestTimestamps` backfill — open documented limitation; EF SQL command logs at
+  Warning — accepted operational choice.
+- **Phase 03 summary:** build 0 warnings/0 errors; tests 100/100 (65 unit, 15 LocalDB integration, 20 functional),
+  0 skipped; review corrections: startup recovery retried before Pending polling (B-01), final state write not
+  cancelled after a provider outcome (M-01), host no longer stopped by a startup database failure (03.1 self-review);
+  open: EF error logs on a handled UNIQUE race (Phase 05), unexpected-error requests wait for the next Worker start,
+  simulated provider state not durable, single Worker. Commits: 03.1 `9c52fcc`, 03.2 `b6d2770`, 03.3 `163d99a`,
+  03.4 this checkpoint (`git log`).
+- Timing: see Phase 03.4 commit timestamp.
 
 ## Unfinished Work Template
 

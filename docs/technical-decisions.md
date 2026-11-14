@@ -84,15 +84,18 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Decision:** `ServiceRequests.Worker` with `BackgroundService` and Windows Service hosting support.
 - **Trade-off:** Two processes to run locally.
 - **Risks:** Low.
-- **Validation:** Phase 03.1 manual run (API + Worker): Pending → Completed, `UNSUPPORTED` → Failed. Windows Service
-  installation not exercised (documented in 03.4).
+- **Validation:** Phase 03.1 manual run (API + Worker): Pending → Completed, `UNSUPPORTED` → Failed. Phase 03.3
+  functional tests start the real hosted Worker from the production composition. Phase 03.4 — README walkthrough
+  re-run (`dotnet run` API + Worker → GET observes Completed); `dotnet publish` produces `ServiceRequests.Worker.exe`.
+  Windows Service registration (`sc.exe` / `New-Service`) documented in the README, not executed.
 - **Future evolution:** production install via `sc.exe`/installer; health monitoring.
 
 ### TD-08 — Polly only around transient provider failures
 
 - **Context:** Provider fails transiently; retrying everything hides bugs and can duplicate effects.
 - **Alternatives:** hand-written retry loop; retry all exceptions.
-- **Decision:** bounded retry (few attempts, short backoff) for a modeled transient failure type at the provider boundary only.
+- **Decision:** Polly retry at the provider boundary only, for `TransientProviderException` only: `MaxRetryAttempts` 2
+  retries = at most 3 provider calls, constant 200 ms delay, no jitter (single Worker, deterministic demo).
 - **Trade-off:** Long outages end as `Failed`; no automatic re-drive.
 - **Risks:** Misclassifying a permanent error as transient → covered by tests.
 - **Validation:** Phase 03.1 — processor tests with the real pipeline: transient ×2 then success → 3 calls,

@@ -14,7 +14,7 @@ Status: `Planned` → `In Progress` → `Verified` (or `Deferred` with reason).
 | R-02 | API queries requests by status | 02 | `GET /api/requests?status=` | U, M | 02.3: HTTP tests for list, `?status=` filter (only that status) and unknown status → 400; repository test of SQL filter + ordering | Verified |
 | R-03 | Web UI creates a request and shows its status (React) | 04 | `frontend/service-requests-web` | M, R | | Planned |
 | R-04 | Real persistence + reproducible storage initialization | 01 | EF Core migrations, SQL Server | I/M | 01.3: `dotnet ef database update` applied `InitialCreate` to LocalDB `ServiceRequestsDb` (indexes checked with `sqlcmd`); LocalDB tests migrate a clean DB and round-trip data through a fresh context | Verified |
-| R-05 | Background process: Pending → simulated provider → status updated; Windows Service path clear | 03, 06 | `ServiceRequests.Worker` | U, M, D | 03.3: `WorkerProcessingTests` — API POST → Worker host → GET observes Completed (with 2 retries) and Failed (permanent); LocalDB processor tests; 03.1 manual run; Windows Service docs pending 03.4 | In Progress |
+| R-05 | Background process: Pending → simulated provider → status updated; Windows Service path clear | 03, 06 | `ServiceRequests.Worker` | U, M, D | 03.3: `WorkerProcessingTests` — API POST → Worker host → GET observes Completed (with 2 retries) and Failed (permanent); LocalDB processor tests; 03.4 README walkthrough re-run (POST → Worker → GET Completed); Windows Service path documented in README (registration not executed) | Verified |
 | R-06 | Automated tests on the most critical behavior | 01–05 | `tests/ServiceRequests.Tests` | U | 02.3: 71 tests pass (transitions, invariants, UNIQUE/collation, idempotency incl. race, HTTP contract); 03.3: 100 tests (65 unit, 15 LocalDB integration, 20 functional) incl. retry, exhaustion, permanent, unexpected, recovery, end-to-end processing, 500 | In Progress |
 | R-07 | Brief log of decisions, assumptions, trade-offs, validations | 00, 06 | `technical-decisions.md`, README | D | | In Progress |
 
@@ -38,7 +38,7 @@ Status: `Planned` → `In Progress` → `Verified` (or `Deferred` with reason).
 | TC-02 | Exactly one frontend technology (React) | 04 | R | | Planned |
 | TC-03 | SQL implemented + 3–5 lines on the NoSQL alternative | 01, 06 | R, D | SQL part: SQL Server via EF Core migrations, LocalDB tests (01.3, 02.3); NoSQL paragraph pending 06 (draft in TD-03) | In Progress |
 | TC-04 | Inputs, errors, configuration and secrets handled safely | 02–04 | U, R | 02.3: 400/409 `application/problem+json` (HTTP tests); 03.3: 500 without internals (`UnhandledErrorTests`, Testing + Development); 02.2: CORS restricted (manual); Worker failure reasons concise, no stack traces; UI pending 04 | In Progress |
-| TC-05 | Worker runnable manually + Windows Service approach documented | 03, 06 | M, D | 03.1/03.3: `dotnet run --project src/ServiceRequests.Worker` starts and processes requests (manual); `AddWindowsService` configured; install steps pending 03.4 | In Progress |
+| TC-05 | Worker runnable manually + Windows Service approach documented | 03, 06 | M, D | 03.1/03.4: `dotnet run --project src/ServiceRequests.Worker` processes requests (manual, README walkthrough); `AddWindowsService`; `dotnet publish` → exe; `sc.exe` / `New-Service` steps in README (not executed) | Verified |
 | TC-06 | No Docker/cloud/CI required to run | all | R | Phases 01–02: build, migrations, API and tests ran with only the .NET SDK + LocalDB (README commands); re-check at 07 | In Progress |
 | TC-07 | Executable path prioritized; unfinished parts documented (state · decision · next step) | 07 | D | | Planned |
 
@@ -54,8 +54,8 @@ Status: `Planned` → `In Progress` → `Verified` (or `Deferred` with reason).
 | ID | Item | Phase | Levels | Evidence | Status |
 | --- | --- | --- | --- | --- | --- |
 | D-01 | Git history shows the evolution of the solution | all | R | Local phase checkpoint commits (`git log`) | In Progress |
-| D-02 | Brief reproducible instructions: backend, frontend, storage, Worker | 06 | M, D | 02.4: README storage, build, run (API) and test commands, each executed; frontend and Worker pending 03–04 | In Progress |
-| D-03 | Executable tests + note on covered scenarios | 05, 06 | U, D | 02.4: README test table (suites, needs, scenarios); 71 tests pass; Worker tests pending 03 | In Progress |
+| D-02 | Brief reproducible instructions: backend, frontend, storage, Worker | 06 | M, D | 02.4/03.4: README storage, build, run (API + Worker), walkthrough and test commands, each executed; frontend pending 04 | In Progress |
+| D-03 | Executable tests + note on covered scenarios | 05, 06 | U, D | 03.4: README test table (suites, needs, scenarios) incl. Worker; 100 tests pass; hardening pending 05 | In Progress |
 | D-04 | Decision log: context, alternatives, decision, trade-offs, risks, validation | 00, 06 | D | `technical-decisions.md` TD-01…TD-19; Phase 01–02 decisions carry all seven fields with executed validation (02.4) | In Progress |
 | D-05 | Business/technical assumptions | 00, 06 | D | A-01…A-06 registered | In Progress |
 | D-06 | AI usage note (what for, how verified, what corrected/rejected) | 06 | D | `docs/ai/ai-usage.md` — incremental evidence through 02.4; README links it; final disclosure pending Phase 06 | Planned |
