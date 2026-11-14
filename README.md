@@ -5,8 +5,8 @@ background against an external provider. Users retry when the portal feels slow 
 so the same business operation (`externalReference`) must never create duplicate effects, and a `Completed`
 request never moves back.
 
-> **Status:** Phases 00–04 complete — domain, SQL Server persistence, idempotent HTTP API, background Worker (retries,
-> startup recovery, Windows Service ready) and the React portal are implemented and validated. Progress and evidence:
+> **Status:** Phases 00–05 complete — domain, SQL Server persistence, idempotent HTTP API, background Worker (retries,
+> startup recovery, Windows Service ready) and the React portal are implemented, tested and regression-checked. Progress and evidence:
 > [`docs/phases/roadmap.md`](docs/phases/roadmap.md).
 
 ## Architecture
@@ -246,13 +246,22 @@ command logs are kept at `Warning` in both hosts.
 | Idempotent API | Done and tested (Phase 02) |
 | Worker, simulated provider, Polly retries, startup recovery, Windows Service readiness | Done and tested (Phase 03); service registration documented, not executed |
 | React portal | Done and validated in a real browser (Phase 04); no automated UI suite (TD-12) |
-| Critical test hardening | Pending — Phase 05 |
+| Critical test hardening | Done (Phase 05): real concurrent idempotency tests, EF race-log decision, full regression |
 | NoSQL alternative note, legacy code review, final README | Pending — Phase 06 |
 
-Known items: a handled concurrent-insert race is logged by EF Core at Error level (events 20102/10000), followed by the application's Information line "Idempotency race for …" — accepted, see TD-22; rows created
-before `AddRequestTimestamps` would get `0001-01-01` timestamps (no such rows exist); a request hit by an unexpected
-Worker error stays Processing until the next Worker start; simulated provider state is not durable across restarts;
-single Worker instance only; the portal refreshes every 3 s (status changes appear with up to that delay). Traceability: [`docs/requirements-traceability.md`](docs/requirements-traceability.md).
+### Known limitations (deliberate, documented)
+
+| # | Limitation | Scope / impact |
+| --- | --- | --- |
+| 1 | `AddRequestTimestamps` gives rows that existed before it `0001-01-01` timestamps | Only a database populated before that migration; none existed. Empty-database path validated |
+| 2 | A request hit by an unexpected (non-provider) Worker error stays `Processing` until the next Worker start | Deliberate: system errors are not retried or turned into `Failed` (TD-20); visible via the Processing filter and logs |
+| 3 | The simulated provider's idempotency memory is per process | After a Worker restart a resumed request may call the simulator again; a real provider needs durable idempotency or reconciliation (TD-10) |
+| 4 | A handled concurrent-insert race is logged by EF Core at Error (events 20102/10000) | Followed by the Information line "Idempotency race for …"; behavior is correct (200/409); broad suppression rejected (TD-22) |
+| 5 | Single Worker instance | Several instances would need an atomic claim and a lease (TD-09) |
+| 6 | The portal refreshes every 3 s | Status changes appear with up to that delay (TD-21) |
+
+Closed findings: StringLength before trim (fixed in Phase 02.2), HTTP 500 regression test (Phase 03.3), portal visual,
+keyboard and README checks (Phases 04.3–04.4). Traceability: [`docs/requirements-traceability.md`](docs/requirements-traceability.md).
 
 ## AI usage
 

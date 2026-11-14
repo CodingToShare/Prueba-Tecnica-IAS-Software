@@ -29,11 +29,11 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 04.2 | UX / architecture / contract review | 3 min | Complete |
 | 04.3 | Build + functional + visual validation | 5 min | Complete |
 | 04.4 | Documentation / evidence / AI | 2 min | Complete |
-| 05 | Critical test hardening | 12 min | In Progress |
+| 05 | Critical test hardening | 12 min | Complete |
 | 05.1 | Critical test hardening | 4 min | Complete |
 | 05.2 | Test-quality / logging review | 2 min | Complete |
 | 05.3 | Full delivery regression | 4 min | Complete |
-| 05.4 | Documentation / evidence | 2 min | Not Started |
+| 05.4 | Documentation / evidence | 2 min | Complete |
 | 06 | Documentation and legacy review | 10 min | Not Started |
 | 07 | Final validation and delivery | 5 min | Not Started |
 | — | Contingency reserve | 5 min | — |
@@ -676,6 +676,23 @@ Every item has a command or a place to look; record results in Phase 07 evidence
 - Open findings: OF-01 timestamp backfill (limitation), OF-03 unexpected Worker error waits for restart (accepted),
   OF-04 simulated provider state per process (accepted). OF-02 EF race Error log: resolved decision (accepted, TD-22).
 - Timing: see Phase 05.3 commit timestamp.
+
+### Phase 05.4 — Complete → Phase 05 Complete
+
+- Stale statements reconciled in current documents: TD-06 "Future evolution" no longer proposes filtering the EF race
+  logs (now points to TD-22); README status and status table updated; README "Known items" replaced by a limitations
+  table with scope/impact and the closed findings; traceability R-06 and D-03 promoted (owner phases done, evidence
+  executed), TC-06, R-07, BR-07, D-04, D-05, D-06 evidence refreshed with Phase 06/07 items still open.
+- Findings ledger: Closed — StringLength before trim (02.2, `47b8067`), HTTP 500 regression (03.3), portal visual/
+  keyboard review (04.3), README frontend section (04.4). Resolved decision — OF-02 EF race Error log accepted (05.2,
+  TD-22). Open, accepted — OF-01 timestamp backfill, OF-03 unexpected Worker error waits for restart, OF-04 simulated
+  provider state per process (plus the single-Worker and 3 s refresh trade-offs listed in the README).
+- **Phase 05 summary:** inventory confirmed meaningful xUnit/Moq/TheoryData/MemberData use; added real concurrent
+  idempotency/conflict tests (API + LocalDB; one row, one id, winner never overwritten, no 500; mutations detected);
+  EF race log sources identified (20102/10000) and accepted with an application Information log; full regression:
+  build 0 warnings, 102/102 tests, migrations from zero, real-stack smoke A–D, frontend ci/build/lint.
+  Commits: 05.1 `638a5ae`, 05.2 `85a2695`, 05.3 `77a528b`, 05.4 this checkpoint (`git log`).
+- Timing: see Phase 05.4 commit timestamp.
 
 ## Unfinished Work Template
 
