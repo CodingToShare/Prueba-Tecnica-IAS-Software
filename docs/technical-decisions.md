@@ -60,7 +60,7 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Decision:** new → 201; same reference + equivalent payload → 200 with existing; conflicting payload → 409.
 - **Trade-off:** "Equivalent" had to be defined (OD-02 → TD-19).
 - **Risks:** A client reusing a reference for a different operation gets 409 (intended).
-- **Validation:** Phase 02.1 manual smoke (201/200/409); automated tests pending 02.3.
+- **Validation:** Phase 02.1 manual smoke; Phase 02.3 unit (Moq) and functional HTTP tests for 201/200/409.
 
 ### TD-06 — Database UNIQUE constraint as final guard
 
@@ -69,7 +69,8 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Decision:** UNIQUE index on `ExternalReference`; SQL errors 2601/2627 translated to the replay/conflict path.
 - **Trade-off:** Exception-driven path for the rare race.
 - **Risks:** Translation must not leak SQL details.
-- **Validation:** pending (Phase 01 migration + Phase 02 tests).
+- **Validation:** Phase 01.3 / 02.3 — duplicate (also case-variant) rejected with 2601/2627; repository maps it to
+  `TryAddAsync == false`; no SQL details reach clients. Known noise: EF logs the handled race at Error (Phase 05).
 
 ### TD-07 — Separate Worker Service
 
@@ -161,6 +162,8 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
   `Microsoft.EntityFrameworkCore.Design` 10.0.15 (Api, private assets — design-time only), local tool `dotnet-ef`
   10.0.15 (`dotnet-tools.json`); template defaults kept: `Microsoft.Extensions.Hosting` 10.0.15 (Worker), xUnit 2.9.3,
   `xunit.runner.visualstudio` 3.1.4, `Microsoft.NET.Test.Sdk` 17.14.1, `coverlet.collector` 6.0.4 (Tests).
+- **Pinned in Phase 02.3 (Tests):** `Moq` 4.20.72 (repository boundary mocks), `Microsoft.AspNetCore.Mvc.Testing`
+  10.0.15 (functional HTTP tests).
 
 ### TD-16 — Explicit database initialization through EF Core migrations (resolves OD-03)
 
@@ -201,7 +204,8 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
   before implementation). The UI uses `UpdatedAt` for "Actualizada" (Phase 04).
 - **Trade-off:** transition methods take a `now` argument.
 - **Risks:** rows created before the migration would receive `0001-01-01` (none exist).
-- **Validation:** Phase 02.1 — domain timestamp tests pass; smoke rows stored with UTC offsets. Full evidence 02.3.
+- **Validation:** Phase 02.1 — domain timestamp tests; Phase 02.3 — service test with fixed `TimeProvider`, exact
+  UTC round trip on LocalDB, columns `datetimeoffset NOT NULL`, HTTP 201 body has equal `createdAt`/`updatedAt`.
 
 ### TD-19 — External reference identity and equivalent replay (resolves OD-02)
 
@@ -222,7 +226,8 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Risks:** moving to a case-sensitive collation would change identity → covered by documenting the dependency.
 - **Validation:** Phase 02.1 — OD-02 unit matrix passes; smoke: lower-cased padded reference → 200, `customerId`
   case change → 409. Phase 02.2 — all six challenge cases behave as specified; different-case lookup uses an Index
-  Seek on `UX_ServiceRequests_ExternalReference`. API/race tests pending 02.3.
+  Seek on `UX_ServiceRequests_ExternalReference`. Phase 02.3 — SQL Server rejects a case-variant duplicate; unit
+  race tests (re-read + same rule); HTTP case-variant replay → 200 same id; mutations of collation/rule detected.
 
 ---
 

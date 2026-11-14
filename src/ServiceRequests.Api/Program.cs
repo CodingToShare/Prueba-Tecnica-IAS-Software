@@ -33,3 +33,6 @@ app.UseCors(FrontendCorsPolicy);
 app.MapControllers();
 
 app.Run();
+
+// Entry point type for WebApplicationFactory<Program> in the functional HTTP tests.
+public partial class Program;

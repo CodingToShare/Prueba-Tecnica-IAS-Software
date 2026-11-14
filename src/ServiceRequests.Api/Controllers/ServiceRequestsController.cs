@@ -6,7 +6,6 @@ namespace ServiceRequests.Api.Controllers;
 
 [ApiController]
 [Route("api/requests")]
-[Produces("application/json")]
 public sealed class ServiceRequestsController(
     ServiceRequestService service,
     ILogger<ServiceRequestsController> logger) : ControllerBase

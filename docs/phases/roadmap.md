@@ -17,7 +17,7 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 02 | Idempotent API | 22 min | In Progress |
 | 02.1 | Development | 10 min | Complete |
 | 02.2 | Technical/requirements review | 4 min | Complete |
-| 02.3 | Automated + functional tests | 6 min | Not Started |
+| 02.3 | Automated + functional tests | 6 min | Complete |
 | 02.4 | Documentation/evidence | 2 min | Not Started |
 | 03 | Background processing and resilience | 20 min | Not Started |
 | 04 | React portal | 18 min | Not Started |
@@ -282,6 +282,44 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   `AddRequestTimestamps` default for pre-existing rows (none exist).
 - Smoke/review rows deleted from `ServiceRequestsDb` afterwards.
 - Timing: see Phase 02.2 commit timestamp.
+
+### Phase 02.3 — Complete (Phase 02 In Progress)
+
+- Baseline: `dotnet build` 0 warnings; `dotnet test` 43/43.
+- Test dependencies (pinned): Moq 4.20.72, Microsoft.AspNetCore.Mvc.Testing 10.0.15; Tests → Api reference;
+  `public partial class Program` added for `WebApplicationFactory<Program>`.
+- Unit (46 = 37 domain + 9 application): OD-02 matrix (trimmed, case-significant), timestamps;
+  `Application/ServiceRequestServiceTests` with a strict Moq repository — new → Created with fixed `TimeProvider`
+  timestamps; equivalent replay (case-variant reference, padded values) → Replayed, `TryAddAsync` never called;
+  3 conflicting payloads → Conflict, never inserted; UNIQUE race (lookup null → insert false → re-read winner) →
+  Replayed or Conflict with the same rule and exactly two lookups; race with missing winner → throws; token passed.
+- Integration (12, LocalDB): Phase 01 tests plus `Persistence/ServiceRequestRepositoryTests` — both migrations
+  applied and `CreatedAt`/`UpdatedAt` are non-null `datetimeoffset`; `REQ…` then `req…` as a distinct row rejected
+  by SQL Server (2601/2627); repository `TryAddAsync` with a case-variant duplicate returns false and keeps one row;
+  different-case lookup returns the stored casing; timestamps round-trip exactly in UTC; SQL status filter and
+  ordering `CreatedAt DESC` then `Id DESC` (ties checked with `SqlGuid` ordering).
+- Functional HTTP (13, `WebApplicationFactory` + LocalDB): POST new → 201 Pending with equal timestamps, one row;
+  same request → 200 same id, one row; padded lower-case reference → 200 same id and stored casing; lower-case
+  reference + `cust-01` → 409 `application/problem+json`, original row unchanged; 5 invalid bodies (`MemberData`)
+  → 400 `application/problem+json` with the field in `errors`; GET lists persisted data; `?status=Pending` /
+  `?status=processing` return only that status; `?status=Banana` and `?status=1` → 400.
+- Product correction found by the tests: `[Produces("application/json")]` on the controller forced 400/409
+  ProblemDetails to `application/json`; attribute removed → `application/problem+json`.
+- Regression: `dotnet build ServiceRequests.sln` → 0 warnings, 0 errors; `dotnet test ServiceRequests.sln --no-build`
+  → total 71, passed 71, failed 0, skipped 0 (TRX counters). Test host used the per-run test database (dev database
+  row count 0 before and after).
+- Quality (temporary mutations, each reverted with `git checkout`): case-sensitive collation on ExternalReference
+  in the migration → 4/4 case tests fail; no re-read after the race → 3/3 race tests fail; payload comparison made
+  case-insensitive → 5/11 targeted tests fail (the casing cases); status filter removed → 2/2 filter tests fail.
+- 02.2 note resolved: a temporary log probe (deleted, not committed) showed that a handled UNIQUE race makes EF Core
+  log two Error entries (`CommandError`, `SaveChangesFailed`, parameter values hidden). Deferred LOW finding:
+  misleading error noise on a handled replay race · reason: changing EF log levels affects all failures and needs
+  its own decision · next step: Phase 05 — demote those events or filter them for the duplicate case, and record it.
+- Migration smoke: `dotnet ef database drop --force` (challenge database, 0 rows) → `dotnet tool restore` →
+  `dotnet ef database update --project src/ServiceRequests.Infrastructure --startup-project src/ServiceRequests.Api`
+  → Done; history has `InitialCreate` and `AddRequestTimestamps`; PK, UNIQUE and Status indexes present; timestamp
+  columns `datetimeoffset`. No `ServiceRequestsDb_Tests_*` databases left.
+- Timing: see Phase 02.3 commit timestamp.
 
 ## Unfinished Work Template
 
