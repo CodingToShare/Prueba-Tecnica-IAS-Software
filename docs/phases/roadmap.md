@@ -111,7 +111,7 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   edition of v3 — same tokens/patterns; content now shows this product: brand bar, request form, segmented status
   filter, request table, lifecycle (Completed terminal), background processing with transient retries, colors mapped
   to request states, submit-outcome alerts (201/200/409/400/network) and view states; energy content, KPIs, charts,
-  queue and sidebar removed; "Cambios respecto a la v3 original" section added. Validation: headless Edge renders at
+  queue and sidebar removed. Validation: headless Edge renders at
   1440/768/390 px reviewed (fixed: codes wrapping at hyphens, stacked reference cell); tag balance, unique ids and
   CSS variables checked by script. Contract, skill, AGENTS.md, project context and TD-13 updated accordingly.
 

@@ -14,7 +14,7 @@ The visual and interaction contract for the React portal (`frontend/service-requ
 The reference is the **Portal de Solicitudes edition** of design system v3: it keeps the v3 visual language (tokens,
 typography, radii, shadows, component patterns, accessibility rules) and shows it applied to this product — the portal
 screen (brand bar, form, segmented filter, request table), the request lifecycle, background processing with retries,
-submit-outcome alerts and view states. Its "Cambios respecto a la v3 original" section lists the adaptation.
+submit-outcome alerts and view states.
 Sample references, customers, services and times are **illustrative**, never data or requirements.
 The reference changes only through a recorded design decision and must stay consistent with this contract; when the
 two differ, this document wins.
