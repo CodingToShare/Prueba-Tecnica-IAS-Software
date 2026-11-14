@@ -32,7 +32,7 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 05 | Critical test hardening | 12 min | In Progress |
 | 05.1 | Critical test hardening | 4 min | Complete |
 | 05.2 | Test-quality / logging review | 2 min | Complete |
-| 05.3 | Full delivery regression | 4 min | Not Started |
+| 05.3 | Full delivery regression | 4 min | Complete |
 | 05.4 | Documentation / evidence | 2 min | Not Started |
 | 06 | Documentation and legacy review | 10 min | Not Started |
 | 07 | Final validation and delivery | 5 min | Not Started |
@@ -656,6 +656,26 @@ Every item has a command or a place to look; record results in Phase 07 evidence
 - Validation: concurrency tests 3 runs (8 EF Error entries + 4 race logs per test each time, assertions green);
   `dotnet build` 0 warnings; `dotnet test` 102/102.
 - Timing: see Phase 05.2 commit timestamp.
+
+### Phase 05.3 — Complete (Phase 05 In Progress)
+
+- .NET: `dotnet restore` OK; `dotnet build ServiceRequests.sln` 0 warnings, 0 errors; `dotnet test --no-build` total 102,
+  passed 102, failed 0, skipped 0 (TRX), both `ConcurrentCreateTests` passed within the suite (no extra loops).
+- Clean migration: dedicated database `ServiceRequestsDb_Verify` (did not exist) created with the documented command
+  plus `--connection`; history `InitialCreate`, `AddRequestTimestamps`; PK, UNIQUE `UX_ServiceRequests_ExternalReference`,
+  `IX_ServiceRequests_Status` present; 0 rows. The historical backfill limitation (OF-01) is unchanged.
+- Full-stack smoke on that database (API and Worker via `ConnectionStrings__ServiceRequests`, default Worker settings,
+  Vite, headless Edge driven over DevTools as in 04.3): A — portal POST → "201 Created · Pending" → Worker log: claim,
+  transient failure on attempt 1, "Completed … after 2 attempt(s)" → portal row Completed; B — same payload → "200 OK"
+  informational, one row; C — another customer → "409 Conflict" warning, input kept; D — `UNSUPPORTED` → portal row
+  Failed (critical badge), reason stored. API list confirmed both rows.
+- Worker console host: started with no DI/options errors (no `fail:`/`crit:` lines); no Windows Service installed.
+- Frontend: `npm ci` (0 vulnerabilities), `npm run build` OK, `npm run lint` 0/0.
+- Cleanup: test browser (stopped by profile), API, Worker and Vite stopped; `ServiceRequestsDb_Verify` dropped; test
+  browser profile deleted; development database untouched. No tracked files changed by the validation.
+- Open findings: OF-01 timestamp backfill (limitation), OF-03 unexpected Worker error waits for restart (accepted),
+  OF-04 simulated provider state per process (accepted). OF-02 EF race Error log: resolved decision (accepted, TD-22).
+- Timing: see Phase 05.3 commit timestamp.
 
 ## Unfinished Work Template
 
