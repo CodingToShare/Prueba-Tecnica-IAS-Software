@@ -53,7 +53,7 @@ Status: `Planned` → `In Progress` → `Verified` (or `Deferred` with reason).
 
 | ID | Item | Phase | Levels | Evidence | Status |
 | --- | --- | --- | --- | --- | --- |
-| D-01 | Git history shows the evolution of the solution | all | R | Local history: 29 phase checkpoint commits (governance → domain → API → Worker → portal → hardening → docs) with their real timestamps; public repository pending 07.3/07.4 | In Progress |
+| D-01 | Git history shows the evolution of the solution | all | R | Public repository https://github.com/CodingToShare/Prueba-Tecnica-IAS-Software: phase checkpoint commits (governance → domain → API → Worker → portal → hardening → docs → release) with their real timestamps; remote `main` = local HEAD (07.4) | Verified |
 | D-02 | Brief reproducible instructions: backend, frontend, storage, Worker | 06 | M, D | 04.4: README "Run the full stack locally" (tools, database, API, Worker, portal with `.env.local` + `npm run dev`) — each command executed (02.4, 03.4, 04.4); final README review in 06 | Verified |
 | D-03 | Executable tests + note on covered scenarios | 05, 06 | U, D | README "Tests and build verification" (suites, needs, scenarios, frontend validation note); `dotnet test` 102/102 (05.3); final README review in 06 | Verified |
 | D-04 | Decision log: context, alternatives, decision, trade-offs, risks, validation | 00, 06 | D | `technical-decisions.md` TD-01…TD-22; README links and summarizes it (06.1) | Verified |

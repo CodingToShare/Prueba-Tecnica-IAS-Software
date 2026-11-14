@@ -123,7 +123,7 @@ authentication, pagination, DELETE/generic update.
 
 ## Current Phase
 
-Phases 00–05 complete (React portal in `frontend/service-requests-web`: `npm ci`, `.env.local` from `.env.example`, `npm run dev` on :5173; 102 tests; EF race log accepted, TD-22). Phase 06 (documentation, legacy review, README dry run) complete; Phase 07 In Progress: 07.1–07.3 complete; public repository https://github.com/CodingToShare/Prueba-Tecnica-IAS-Software (branch `main`); 07.4 verification awaits authorization.
+Phases 00–05 complete (React portal in `frontend/service-requests-web`: `npm ci`, `.env.local` from `.env.example`, `npm run dev` on :5173; 102 tests; EF race log accepted, TD-22). Phase 06 (documentation, legacy review, README dry run) complete; All phases 00–07 complete; challenge delivered at https://github.com/CodingToShare/Prueba-Tecnica-IAS-Software (branch `main`).
 Execution guide: `README.md`. API: `POST /api/requests`, `GET /api/requests[?status=]`; CORS origin from
 `Cors:AllowedOrigins` (default `http://localhost:5173`).
 Tests: `dotnet test ServiceRequests.sln` (102: unit incl. Worker, LocalDB integration incl. Worker processing, functional API + Worker host + 500; LocalDB integration, HTTP via WebApplicationFactory; persistence tests use a throwaway LocalDB database, TD-17; override

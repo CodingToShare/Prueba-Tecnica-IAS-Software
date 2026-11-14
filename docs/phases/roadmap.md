@@ -39,11 +39,11 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 06.2 | Documentation / requirement audit | 2 min | Complete |
 | 06.3 | Reviewer reproducibility dry run | 2 min | Complete |
 | 06.4 | Final evidence / Phase 06 closure | 2 min | Complete |
-| 07 | Final validation and delivery | 5 min | In Progress |
+| 07 | Final validation and delivery | 5 min | Complete |
 | 07.1 | Final release gate | 2 min | Complete |
 | 07.2 | Git/security/history hygiene | 1 min | Complete |
 | 07.3 | Public GitHub publication | 1 min | Complete |
-| 07.4 | Post-publication verification | 1 min | Not Started |
+| 07.4 | Post-publication verification | 1 min | Complete |
 | — | Contingency reserve | 5 min | — |
 
 ## Phase Scopes
@@ -814,6 +814,23 @@ Every item has a command or a place to look; record results in Phase 07 evidence
 - Verified through the GitHub API: visibility PUBLIC, default branch `main`, remote `main` = local HEAD (`71ce395`),
   31 commits on both sides; local `main` tracks `origin/main`, working tree clean.
 - Timing: see Phase 07.3 commit timestamp.
+
+### Phase 07.4 — Complete → Phase 07 Complete (challenge delivered)
+
+- Public content (GitHub API tree): 100 files, identical to the local tracked set — README, solution, source, frontend,
+  tests, both migrations, technical decisions, traceability, legacy review, AI usage, roadmap, design contract and
+  reference; no `.env`, local settings, credentials, `node_modules`, `bin`/`obj`, `dist`, archives or logs.
+- Remote history: `main` = local HEAD (`9573929` at verification), 32 commits, readable messages, no assistant
+  attribution; timestamps as created locally.
+- README rendered by GitHub (HTML from the API): 16 sections, 7 code blocks, 5 tables; every relative link
+  (`docs/…`) and the design reference link resolve to files in the public tree.
+- Cloneability: `git ls-remote origin` lists `HEAD`/`refs/heads/main`; a temporary clone outside the repository had
+  100 files on `main` at `9573929` (removed afterwards).
+- Traceability: D-01 Verified; every challenge requirement is Verified with test, manual or documentation evidence.
+- Final validation results (07.1, no product changes since): build 0 warnings/0 errors, 102/102 tests, frontend
+  ci/build/lint green. Remaining limitations (OF-01, OF-03, OF-04) and accepted trade-offs (TD-22, TD-09, TD-21) are
+  documented in the README.
+- Timing: see Phase 07.4 commit timestamp.
 
 ## Unfinished Work Template
 
