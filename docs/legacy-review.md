@@ -71,7 +71,8 @@ public ActionResult UpdateStatus(int id, string status)
     if (status == null || !AllowedTransitions.ContainsKey(status))
         return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Unknown status.");
 
-    if (!AllowedTransitions[request.Status].Contains(status))
+    string[] next;
+    if (!AllowedTransitions.TryGetValue(request.Status ?? "", out next) || !next.Contains(status))
         return new HttpStatusCodeResult(HttpStatusCode.Conflict, "Transition not allowed.");
 
     request.Status = status;

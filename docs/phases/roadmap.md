@@ -36,7 +36,7 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 05.4 | Documentation / evidence | 2 min | Complete |
 | 06 | Documentation and legacy review | 10 min | In Progress |
 | 06.1 | Delivery documentation | 4 min | Complete |
-| 06.2 | Documentation / requirement audit | 2 min | Not Started |
+| 06.2 | Documentation / requirement audit | 2 min | Complete |
 | 06.3 | Reviewer reproducibility dry run | 2 min | Not Started |
 | 06.4 | Final evidence / Phase 06 closure | 2 min | Not Started |
 | 07 | Final validation and delivery | 5 min | Not Started |
@@ -719,6 +719,27 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   requirements keep their earlier test/browser evidence. Decisions reviewed: TD-01…TD-22 cover the requested topics;
   TD-22 is a resolved decision; no new decision numbers.
 - Timing: see Phase 06.1 commit timestamp.
+
+### Phase 06.2 — Complete (audit gate; Phase 06 In Progress)
+
+- Requirement coverage (challenge §2–§6) checked against source, configuration, tests and docs: API (POST/GET + status
+  filter), React portal, SQL Server persistence + migrations, Worker + simulated provider, critical tests (102),
+  decisions/trade-offs (TD-01…TD-22), assumptions (A-01…A-06), legacy review, AI disclosure, reproducible execution,
+  SQL vs NoSQL note, Windows Service explanation — all present; no BLOCKER.
+- Command audit: solution, tool manifest (`dotnet-tools.json`), migration/startup projects, frontend directory, npm
+  scripts (`dev/build/lint/preview`), configuration keys, ports (5164 `launchSettings.json`, 5173 Vite/CORS) and all
+  linked documents exist and match. No stale wording found in current documents.
+- Findings: MEDIUM — demo step 1 promised Pending → Processing → Completed with default settings, contradicting the
+  next paragraph (Processing is rarely visible: ~1 s processing vs 3 s refresh) → reworded. LOW — legacy MVC fix indexed
+  the transition table with the stored status (an unexpected stored value would throw → 500) → `TryGetValue`. LOW —
+  limitations table labels refined (Migration limitation, Operational limitation). NOTE — project context repository
+  map now lists `docs/legacy-review.md`.
+- Legacy review: WebForms SQL injection → parameterized query; MVC null → 404, status validation, transition
+  protection, DTO response; kept minimal. AI disclosure: README matches `docs/ai/ai-usage.md` (uses, verification,
+  corrections and rejections that are in the log; no transcripts). Limitations/trade-offs classified as OF-01 migration,
+  OF-03 operational, OF-04 simulation limitations; TD-22 accepted logging trade-off; TD-09 scope assumption; TD-21 UX.
+- Validation: `git diff --check` clean; documentation-only changes.
+- Timing: see Phase 06.2 commit timestamp.
 
 ## Unfinished Work Template
 

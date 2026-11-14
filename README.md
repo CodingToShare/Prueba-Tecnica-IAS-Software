@@ -80,7 +80,8 @@ ignored by Git. The API allows the portal origin `http://localhost:5173` (CORS).
 ## Reviewer demo (in the portal)
 
 1. **Success** — register `REQ-1` / `CUS-1042` / `MANT-PREV` / any description → green "Solicitud registrada · 201
-   Created"; the row moves Pending → Processing → Completed by itself (one simulated transient failure, then a retry).
+   Created" with status Pending; within a few seconds the row turns Completed by itself (the Worker hits one simulated
+   transient failure and succeeds on the retry; the list refreshes every 3 s).
 2. **Idempotent replay** — submit the same data again (also `req-1` in lower case) → blue "Ya existía una solicitud… no
    se creó un duplicado · 200 OK"; still one row, same request.
 3. **Conflict** — same reference with another customer → amber "ya existe con datos diferentes · 409 Conflict"; the form
@@ -88,7 +89,8 @@ ignored by Git. The API allows the portal origin `http://localhost:5173` (CORS).
 4. **Permanent provider failure** — service code `UNSUPPORTED` → **Failed** after one call (no retry).
 5. **Filter** — Todas / Pending / Processing / Completed / Failed; each option queries the API with `?status=`.
 
-With default settings a request completes in about a second. To watch Pending and Processing, start the Worker slower:
+With default settings a request completes in about a second, so Processing is rarely visible. To watch Pending and
+Processing, start the Worker slower:
 
 ```powershell
 $env:Worker__PollingIntervalMilliseconds = "5000"; $env:Worker__RetryDelayMilliseconds = "5000"
@@ -256,8 +258,8 @@ transient and permanent provider failures are modeled.
 
 | Type | Item | Scope / impact | Future production evolution |
 | --- | --- | --- | --- |
-| Limitation | `AddRequestTimestamps` would give rows that existed before it `0001-01-01` timestamps | None here: no database had rows before that migration; empty-database path validated | Explicit data backfill before enforcing the timestamp columns |
-| Limitation | A request hit by an unexpected (non-provider) Worker error stays `Processing` until the next Worker start | That request waits; others continue. System errors are not mislabeled as provider failures (TD-20) | Periodic recovery of stale `Processing` rows using `UpdatedAt` as a lease |
+| Migration limitation | `AddRequestTimestamps` would give rows that existed before it `0001-01-01` timestamps | None here: no database had rows before that migration; empty-database path validated | Explicit data backfill before enforcing the timestamp columns |
+| Operational limitation | A request hit by an unexpected (non-provider) Worker error stays `Processing` until the next Worker start | That request waits; others continue. System errors are not mislabeled as provider failures (TD-20) | Periodic recovery of stale `Processing` rows using `UpdatedAt` as a lease |
 | Simulation limitation | The simulated provider's idempotency memory is per process | After a restart a resumed request may call the simulator again | Real provider with durable idempotency keys, or reconciliation (TD-10) |
 | Accepted operational trade-off | A handled UNIQUE race is logged by EF Core at Error (events 20102/10000), followed by the app's Information line "Idempotency race for …" | Behavior is correct (200/409); broad suppression would hide genuine database failures (TD-22) | Alert filtering correlated with the race log |
 | Scope assumption | One Worker instance | Several instances could claim the same row | Atomic database claim (conditional update / rowversion) and a lease (TD-09) |

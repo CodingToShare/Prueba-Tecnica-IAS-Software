@@ -53,6 +53,7 @@ docs/design/reference/           canonical visual reference (HTML)
 docs/technical-decisions.md      decisions, assumptions, open decisions
 docs/requirements-traceability.md  challenge requirement → phase → evidence
 docs/ai/ai-usage.md              incremental AI usage evidence (tracked)
+docs/legacy-review.md            WebForms/MVC legacy review (challenge §5)
 docs/phases/roadmap.md           phases, status, evidence
 ```
 
@@ -122,7 +123,7 @@ authentication, pagination, DELETE/generic update.
 
 ## Current Phase
 
-Phases 00–05 complete (React portal in `frontend/service-requests-web`: `npm ci`, `.env.local` from `.env.example`, `npm run dev` on :5173; 102 tests; EF race log accepted, TD-22). Phase 06 In Progress: 06.1 delivery documentation complete (README, `docs/legacy-review.md`); 06.2–06.4 await authorization.
+Phases 00–05 complete (React portal in `frontend/service-requests-web`: `npm ci`, `.env.local` from `.env.example`, `npm run dev` on :5173; 102 tests; EF race log accepted, TD-22). Phase 06 In Progress: 06.1 delivery documentation and 06.2 audit complete (README, `docs/legacy-review.md`); 06.3–06.4 await authorization.
 Execution guide: `README.md`. API: `POST /api/requests`, `GET /api/requests[?status=]`; CORS origin from
 `Cors:AllowedOrigins` (default `http://localhost:5173`).
 Tests: `dotnet test ServiceRequests.sln` (102: unit incl. Worker, LocalDB integration incl. Worker processing, functional API + Worker host + 500; LocalDB integration, HTTP via WebApplicationFactory; persistence tests use a throwaway LocalDB database, TD-17; override
