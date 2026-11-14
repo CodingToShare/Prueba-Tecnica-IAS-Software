@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\src\ServiceRequests.Core\ServiceRequests.Core.csproj" />
     <ProjectReference Include="..\..\src\ServiceRequests.Infrastructure\ServiceRequests.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\ServiceRequests.Api\ServiceRequests.Api.csproj" />
+    <ProjectReference Include="..\..\src\ServiceRequests.Worker\ServiceRequests.Worker.csproj" />
   </ItemGroup>
 
 </Project>

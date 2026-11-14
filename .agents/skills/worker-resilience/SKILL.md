@@ -19,7 +19,8 @@ loop (configurable interval) → fetch Pending batch
   → transient retries exhausted → Fail(reason) + save
 ```
 
-- Processing logic in a testable class (Core), not inside `ExecuteAsync`.
+- Processing logic in a testable class (`ServiceRequestProcessor` in the Worker project, next to Polly — TD-20), not
+  inside `ExecuteAsync`; Core keeps only the provider contract and failure types.
 - Provider interface in Core; simulated provider in Infrastructure, idempotent by `externalReference`
   (repeat call with same key returns the prior result without a second effect).
 - Simulated failures configurable (e.g. transient failure rate) and deterministic in tests.

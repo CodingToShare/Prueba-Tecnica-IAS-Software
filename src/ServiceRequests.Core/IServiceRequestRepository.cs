@@ -17,4 +17,13 @@ public interface IServiceRequestRepository
 
     /// <summary>Lists requests, optionally filtered by status, newest first (CreatedAt desc, Id desc).</summary>
     Task<IReadOnlyList<ServiceRequest>> ListAsync(ServiceRequestStatus? status, CancellationToken cancellationToken);
+
+    /// <summary>Oldest Pending request (CreatedAt asc, Id asc), tracked for update; <c>null</c> when none.</summary>
+    Task<ServiceRequest?> FindNextPendingAsync(CancellationToken cancellationToken);
+
+    /// <summary>Request by id, tracked for update; <c>null</c> when it does not exist.</summary>
+    Task<ServiceRequest?> FindByIdAsync(Guid id, CancellationToken cancellationToken);
+
+    /// <summary>Persists the current state of a request obtained from this repository.</summary>
+    Task UpdateAsync(ServiceRequest request, CancellationToken cancellationToken);
 }

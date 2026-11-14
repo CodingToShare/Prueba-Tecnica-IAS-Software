@@ -84,7 +84,8 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Decision:** `ServiceRequests.Worker` with `BackgroundService` and Windows Service hosting support.
 - **Trade-off:** Two processes to run locally.
 - **Risks:** Low.
-- **Validation:** pending (Phase 03 manual run: Pending → Completed).
+- **Validation:** Phase 03.1 manual run (API + Worker): Pending → Completed, `UNSUPPORTED` → Failed. Windows Service
+  installation not exercised (documented in 03.4).
 - **Future evolution:** production install via `sc.exe`/installer; health monitoring.
 
 ### TD-08 — Polly only around transient provider failures
@@ -94,7 +95,9 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Decision:** bounded retry (few attempts, short backoff) for a modeled transient failure type at the provider boundary only.
 - **Trade-off:** Long outages end as `Failed`; no automatic re-drive.
 - **Risks:** Misclassifying a permanent error as transient → covered by tests.
-- **Validation:** pending (Phase 03 Moq tests).
+- **Validation:** Phase 03.1 — processor tests with the real pipeline: transient ×2 then success → 3 calls,
+  Completed; always transient → 3 calls, Failed; permanent → 1 call; unexpected exception → 1 call, propagates,
+  request stays Processing. Settings: `MaxRetryAttempts` 2, constant `RetryDelayMilliseconds` 200 (0 in tests).
 - **Future evolution:** circuit breaker; scheduled re-drive of Failed requests.
 
 ### TD-09 — Single Worker instance assumption
@@ -103,9 +106,11 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Alternatives:** atomic conditional UPDATE claim; `UPDLOCK, READPAST` queue pattern.
 - **Decision:** one Worker instance; claim by persisting `Processing` before calling the provider.
 - **Trade-off:** Multiple instances could double-claim.
-- **Risks:** A crash can leave requests in `Processing`. Mitigation (planned, Phase 03): resume them at Worker startup —
-  safe because the provider is idempotent (TD-10). If cut for time, documented as a limitation.
-- **Validation:** pending.
+- **Risks:** A crash can leave requests in `Processing`. Mitigation (Phase 03.1): the Worker resumes them at startup
+  from the provider call (no re-claim) — safe because the provider is idempotent (TD-10). Multiple instances would
+  need an atomic claim (conditional UPDATE / rowversion) and a lease timeout; not implemented.
+- **Validation:** Phase 03.1 — claim persisted before the provider call (processor test asserts the order); a row
+  inserted as Processing was resumed and Completed on Worker start (manual).
 - **Future evolution:** atomic claim + lease timeout.
 
 ### TD-10 — Simulated provider idempotent by `externalReference`
@@ -114,8 +119,11 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
 - **Alternatives:** transactional outbox; reconciliation job.
 - **Decision:** the simulated provider records processed references and returns the prior result on repeat.
 - **Trade-off:** Real integration depends on provider support or reconciliation.
-- **Risks:** In-memory record is lost on restart (acceptable for a simulation; documented).
-- **Validation:** pending (Phase 03 test).
+- **Risks:** In-memory record is lost on restart (acceptable for a simulation; documented): after a restart the
+  simulation cannot prove exactly-once; a real provider must offer idempotency keys or reconciliation.
+- **Validation:** Phase 03.1 — `SimulatedExternalProviderTests`: replay of a processed reference (also different
+  case) succeeds with effect count 1; attempt counts are per reference.
+- **Future evolution:** real provider with an idempotency key header or a reconciliation job.
 
 ### TD-11 — Deliberately excluded
 
@@ -171,6 +179,8 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
   `xunit.runner.visualstudio` 3.1.4, `Microsoft.NET.Test.Sdk` 17.14.1, `coverlet.collector` 6.0.4 (Tests).
 - **Pinned in Phase 02.3 (Tests):** `Moq` 4.20.72 (repository boundary mocks), `Microsoft.AspNetCore.Mvc.Testing`
   10.0.15 (functional HTTP tests).
+- **Pinned in Phase 03.1 (Worker):** `Polly.Core` 8.9.1 (retry pipeline), `Microsoft.Extensions.Hosting.WindowsServices`
+  10.0.15 (`AddWindowsService`).
 
 ### TD-16 — Explicit database initialization through EF Core migrations (resolves OD-03)
 
@@ -240,6 +250,24 @@ Decision format (challenge §6): Context · Alternatives · Decision · Trade-of
   race tests (re-read + same rule); HTTP case-variant replay → 200 same id; mutations of collation/rule detected.
 - **Future evolution:** if business values must become case-insensitive, change `HasEquivalentPayload` in one place
   and record the decision.
+
+### TD-20 — Request processor in the Worker; provider failures classified
+
+- **Context:** Processing must be testable outside the host; Polly must not leak into Core; business failures must be
+  distinguishable from system failures.
+- **Alternatives:** processor in Core (the original `worker-resilience` skill wording) — would need Polly or a
+  retry abstraction in Core; retrying every exception; marking any exception as `Failed`.
+- **Decision:** `ServiceRequestProcessor` lives in `ServiceRequests.Worker` next to the Polly pipeline and is tested
+  directly (host-free). Core defines `IExternalProvider`, `TransientProviderException`, `PermanentProviderException`.
+  Transient → retried (2 retries, constant delay) then `Failed` with a concise reason; permanent → `Failed` after one
+  call; any other exception → not retried, propagates, request stays `Processing`, Worker logs it and continues, and
+  the request is resumed on the next start. One Pending request at a time, oldest first; polling interval
+  configurable. Simulated provider is deterministic (`TransientFailuresBeforeSuccess`, `PermanentFailureServiceCodes`).
+  Recorded 2026-11-14 (Phase 03.1).
+- **Trade-off:** a request hit by an unexpected error waits for a Worker restart.
+- **Risks:** repeated unexpected errors could keep requests in Processing; visible through logs and the status filter.
+- **Validation:** Phase 03.1 — 15 focused tests; manual end-to-end and startup-recovery runs (roadmap evidence).
+- **Future evolution:** periodic recovery of stale Processing rows using `UpdatedAt` as a lease.
 
 ---
 

@@ -19,7 +19,11 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 02.2 | Technical/requirements review | 4 min | Complete |
 | 02.3 | Automated + functional tests | 6 min | Complete |
 | 02.4 | Documentation/evidence | 2 min | Complete |
-| 03 | Background processing and resilience | 20 min | Not Started |
+| 03 | Background processing and resilience | 20 min | In Progress |
+| 03.1 | Development | 9 min | Complete |
+| 03.2 | Technical/resilience review | 3 min | Not Started |
+| 03.3 | Automated + functional validation | 6 min | Not Started |
+| 03.4 | Documentation/evidence | 2 min | Not Started |
 | 04 | React portal | 18 min | Not Started |
 | 05 | Critical test hardening | 12 min | Not Started |
 | 06 | Documentation and legacy review | 10 min | Not Started |
@@ -342,6 +346,40 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   (02.3); deferred: EF error logs on a handled race (Phase 05). Commits: 02.1 `a491ccc`, 02.2 `47b8067`,
   02.3 `147c7db`, 02.4 this checkpoint (`git log`).
 - Timing: see Phase 02.4 commit timestamp.
+
+### Phase 03.1 — Complete (Phase 03 In Progress)
+
+- Entry: SDK 10.0.404; baseline build 0 warnings, tests 71/71; working tree clean.
+- Core: `IExternalProvider` (takes the request; `ExternalReference` is the idempotency key),
+  `TransientProviderException`, `PermanentProviderException`; repository gains `FindNextPendingAsync` (oldest first,
+  tracked), `FindByIdAsync` (tracked) and `UpdateAsync`. Core still has no package references.
+- Infrastructure: `SimulatedExternalProvider` + `ExternalProviderOptions` (`TransientFailuresBeforeSuccess`,
+  `PermanentFailureServiceCodes`); attempts and applied effects tracked per reference (case-insensitive, thread-safe,
+  in memory only); a processed reference replays as success without a second effect.
+- Worker: `ServiceRequestProcessor` (claim → persist Processing → provider through Polly → Complete/Fail → persist;
+  resume path for Processing without re-claim; unexpected exceptions propagate and leave Processing);
+  `CreateProviderPipeline` = Polly retry handling only `TransientProviderException`, `MaxRetryAttempts` 2, constant
+  delay, no jitter; `RequestProcessingWorker` (startup recovery of Processing ids, then one Pending at a time, scope per
+  unit, errors logged and loop continues, cancellation = normal shutdown, `Task.Delay` with `TimeProvider`);
+  `WorkerOptions` + provider options validated on start; `AddWindowsService` with service name
+  `ServiceRequestsWorker`; Worker `appsettings.json` keeps EF SQL command logs at Warning.
+- Packages (pinned): `Polly.Core` 8.9.1, `Microsoft.Extensions.Hosting.WindowsServices` 10.0.15 (Worker). Tests now
+  reference the Worker project.
+- Focused tests: `Worker/ServiceRequestProcessorTests` (9) and `Worker/SimulatedExternalProviderTests` (6).
+- Validation (executed): `dotnet build` 0 warnings/0 errors; `dotnet test` 86/86, 0 skipped. Manual run (API +
+  Worker, Development, default config): normal request → claimed, transient failure on attempt 1, Completed on
+  attempt 2; `serviceCode` `UNSUPPORTED` → Failed after one call with the reason stored; both `UpdatedAt > CreatedAt`.
+  Startup recovery: a row inserted directly as Processing was resumed (no re-claim) and Completed. Processes stopped
+  and test rows deleted.
+- Self-review fix before commit: a database failure while listing Processing rows at startup escaped the loop and
+  would stop the host; now logged and polling continues. Checked with an unreachable server
+  (`ConnectionStrings__ServiceRequests` override): recovery error logged, polling errors logged each interval, process
+  stays alive, no host failure.
+- Open findings: graceful-shutdown logging not observed (processes were force-stopped) — check in 03.3 ·
+  an unexpected failure leaves its request in Processing until the next Worker start (by design) · simulated
+  provider state is lost on restart (documented limitation) · Phase 02 findings 1, 2 unchanged; 500 regression test
+  scheduled for 03.3.
+- Timing: see Phase 03.1 commit timestamp.
 
 ## Unfinished Work Template
 

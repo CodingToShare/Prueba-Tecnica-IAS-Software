@@ -99,9 +99,12 @@ poll → find Pending → MarkProcessing + persist (claim)
 ```
 
 Single Worker instance assumed; multiple workers would need an atomic claim (e.g. conditional UPDATE / rowversion).
-Planned: on startup the Worker resumes requests left in `Processing` by a crash (safe because the provider is idempotent
-by `externalReference`); if cut for time, it is documented as a limitation.
-Hosted so it can run via `UseWindowsService()`; manual `dotnet run` demonstrates the flow.
+Implemented in 03.1 (TD-20): on startup the Worker resumes requests left in `Processing` from the provider call (no
+re-claim), then processes one Pending at a time. Only `TransientProviderException` is retried (2 retries); a
+`PermanentProviderException` fails at once; unexpected exceptions leave the request Processing for the next start.
+Simulated provider: `ExternalProvider:TransientFailuresBeforeSuccess` (default 1), `PermanentFailureServiceCodes`
+(default `UNSUPPORTED`); in-memory idempotency per process. `AddWindowsService` (service name `ServiceRequestsWorker`);
+`dotnet run --project src/ServiceRequests.Worker` for the demo.
 
 ## Deliberate Non-Goals
 
@@ -119,9 +122,10 @@ authentication, pagination, DELETE/generic update.
 
 ## Current Phase
 
-Phases 00, 00.1, 01 and 02 complete; Phase 03 (Worker) awaits authorization. Execution guide: `README.md`. API: `POST /api/requests`, `GET /api/requests[?status=]`; CORS origin from
+Phases 00, 00.1, 01 and 02 complete. Phase 03 In Progress: 03.1 development complete; 03.2 review, 03.3 tests and
+03.4 docs each await authorization. Execution guide: `README.md`. API: `POST /api/requests`, `GET /api/requests[?status=]`; CORS origin from
 `Cors:AllowedOrigins` (default `http://localhost:5173`).
-Tests: `dotnet test ServiceRequests.sln` (71: unit, LocalDB integration, HTTP via WebApplicationFactory; persistence tests use a throwaway LocalDB database, TD-17; override
+Tests: `dotnet test ServiceRequests.sln` (86: unit incl. Worker processor/provider, LocalDB integration, HTTP via WebApplicationFactory; persistence tests use a throwaway LocalDB database, TD-17; override
 server with `SERVICEREQUESTS_TEST_SQLSERVER`). Database init (TD-16): `dotnet tool restore`, then
 `dotnet ef database update --project src/ServiceRequests.Infrastructure --startup-project src/ServiceRequests.Api`.
 See `docs/phases/roadmap.md` for status.

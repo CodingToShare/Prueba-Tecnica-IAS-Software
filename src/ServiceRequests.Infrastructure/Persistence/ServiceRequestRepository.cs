@@ -46,6 +46,26 @@ internal sealed class ServiceRequestRepository(ServiceRequestsDbContext context)
             .ToListAsync(cancellationToken);
     }
 
+    public Task<ServiceRequest?> FindNextPendingAsync(CancellationToken cancellationToken) =>
+        context.ServiceRequests
+            .Where(r => r.Status == ServiceRequestStatus.Pending)
+            .OrderBy(r => r.CreatedAt)
+            .ThenBy(r => r.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+    public Task<ServiceRequest?> FindByIdAsync(Guid id, CancellationToken cancellationToken) =>
+        context.ServiceRequests.SingleOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+    public async Task UpdateAsync(ServiceRequest request, CancellationToken cancellationToken)
+    {
+        if (context.Entry(request).State == EntityState.Detached)
+        {
+            context.ServiceRequests.Update(request);
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
     private static bool IsUniqueViolation(DbUpdateException exception) =>
         exception.InnerException is SqlException sqlException
         && UniqueViolationErrorNumbers.Contains(sqlException.Number);
