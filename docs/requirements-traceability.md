@@ -39,8 +39,8 @@ Status: `Planned` → `In Progress` → `Verified` (or `Deferred` with reason).
 | TC-03 | SQL implemented + 3–5 lines on the NoSQL alternative | 01, 06 | R, D | SQL Server via EF Core migrations, LocalDB tests (01.3–05.3); README "SQL Server vs NoSQL" short section (06.1) | Verified |
 | TC-04 | Inputs, errors, configuration and secrets handled safely | 02–04 | U, R | 02.3/03.3: 400/409/500 ProblemDetails without internals (HTTP tests); 02.2: CORS restricted; 03: concise Worker failure reasons; 04.3: UI never shows server internals (5xx/network generic message), only public `VITE_API_BASE_URL`, no secrets | Verified |
 | TC-05 | Worker runnable manually + Windows Service approach documented | 03, 06 | M, D | 03.1/03.4: `dotnet run --project src/ServiceRequests.Worker` processes requests (manual, README walkthrough); `AddWindowsService`; `dotnet publish` → exe; `sc.exe` / `New-Service` steps in README (not executed) | Verified |
-| TC-06 | No Docker/cloud/CI required to run | all | R | Phases 01–05: build, migrations, API, Worker, portal and tests ran with the .NET SDK, LocalDB and Node only (05.3 full-stack regression); final check at 07 | In Progress |
-| TC-07 | Executable path prioritized; unfinished parts documented (state · decision · next step) | 07 | D | | Planned |
+| TC-06 | No Docker/cloud/CI required to run | all | R | 07.1: final build, 102/102 tests, migrations and portal build ran with the .NET SDK, LocalDB and Node only; no Docker/cloud/CI files tracked; README-driven run in 06.3 | Verified |
+| TC-07 | Executable path prioritized; unfinished parts documented (state · decision · next step) | 07 | D | 07.1: full executable path validated (05.3, 06.3); remaining limitations and trade-offs listed with scope/impact and production evolution in the README table; no unfinished scope | Verified |
 
 ## Legacy Review (challenge §5)
 
@@ -53,7 +53,7 @@ Status: `Planned` → `In Progress` → `Verified` (or `Deferred` with reason).
 
 | ID | Item | Phase | Levels | Evidence | Status |
 | --- | --- | --- | --- | --- | --- |
-| D-01 | Git history shows the evolution of the solution | all | R | Local phase checkpoint commits (`git log`) | In Progress |
+| D-01 | Git history shows the evolution of the solution | all | R | Local history: 29 phase checkpoint commits (governance → domain → API → Worker → portal → hardening → docs) with their real timestamps; public repository pending 07.3/07.4 | In Progress |
 | D-02 | Brief reproducible instructions: backend, frontend, storage, Worker | 06 | M, D | 04.4: README "Run the full stack locally" (tools, database, API, Worker, portal with `.env.local` + `npm run dev`) — each command executed (02.4, 03.4, 04.4); final README review in 06 | Verified |
 | D-03 | Executable tests + note on covered scenarios | 05, 06 | U, D | README "Tests and build verification" (suites, needs, scenarios, frontend validation note); `dotnet test` 102/102 (05.3); final README review in 06 | Verified |
 | D-04 | Decision log: context, alternatives, decision, trade-offs, risks, validation | 00, 06 | D | `technical-decisions.md` TD-01…TD-22; README links and summarizes it (06.1) | Verified |

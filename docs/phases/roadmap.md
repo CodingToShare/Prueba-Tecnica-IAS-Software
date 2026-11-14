@@ -39,7 +39,11 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 06.2 | Documentation / requirement audit | 2 min | Complete |
 | 06.3 | Reviewer reproducibility dry run | 2 min | Complete |
 | 06.4 | Final evidence / Phase 06 closure | 2 min | Complete |
-| 07 | Final validation and delivery | 5 min | Not Started |
+| 07 | Final validation and delivery | 5 min | In Progress |
+| 07.1 | Final release gate | 2 min | Complete |
+| 07.2 | Git/security/history hygiene | 1 min | Not Started |
+| 07.3 | Public GitHub publication | 1 min | Not Started |
+| 07.4 | Post-publication verification | 1 min | Not Started |
 | — | Contingency reserve | 5 min | — |
 
 ## Phase Scopes
@@ -773,6 +777,23 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   README-driven dry run passed on a dedicated database. Commits: 06.1 `2d600f2`, 06.2 `19cc400`, 06.3 `889e9a5`,
   06.4 this checkpoint (`git log`).
 - Timing: see Phase 06.4 commit timestamp.
+
+### Phase 07.1 — Complete (Phase 07 In Progress)
+
+- Git: branch `master`, working tree clean, no remote; 29 local commits kept with their real timestamps.
+- Backend: `dotnet tool restore`, `dotnet restore` OK; `dotnet build ServiceRequests.sln` 0 warnings, 0 errors;
+  `dotnet test --no-build` total 102, passed 102, failed 0, skipped 0 (TRX).
+- Frontend: `npm ci` (0 vulnerabilities), `npm run build` OK, `npm run lint` 0/0.
+- Migrations: `dotnet ef migrations list` → `InitialCreate`, `AddRequestTimestamps` (read-only check).
+- README: all required sections present; no TODO/TBD/pending markers in tracked docs or code (roadmap and AI log
+  are historical records).
+- Secrets: tracked files and every commit scanned for password/secret/api key/token/bearer/private-key patterns;
+  only matches are the delivery-checklist rule text and the deliberately fake message used by the 500 regression test
+  (fictitious host, asserted not to leak). Only committed connection string: LocalDB with Windows authentication. No
+  `.env`, `*.local.json`, `settings.local.json`, keys, `bin/`, `obj/`, `node_modules/` or `dist/` in any commit.
+- Traceability: TC-06 and TC-07 Verified (no Docker/cloud/CI files; executable path validated; limitations documented);
+  D-01 waits for the public repository (07.3/07.4). All other requirements already Verified with test/manual evidence.
+- Timing: see Phase 07.1 commit timestamp.
 
 ## Unfinished Work Template
 
