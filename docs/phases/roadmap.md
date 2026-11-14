@@ -37,7 +37,7 @@ Statuses: `Not Started` · `In Progress` · `Complete` · `Blocked` · `Deferred
 | 06 | Documentation and legacy review | 10 min | In Progress |
 | 06.1 | Delivery documentation | 4 min | Complete |
 | 06.2 | Documentation / requirement audit | 2 min | Complete |
-| 06.3 | Reviewer reproducibility dry run | 2 min | Not Started |
+| 06.3 | Reviewer reproducibility dry run | 2 min | Complete |
 | 06.4 | Final evidence / Phase 06 closure | 2 min | Not Started |
 | 07 | Final validation and delivery | 5 min | Not Started |
 | — | Contingency reserve | 5 min | — |
@@ -740,6 +740,23 @@ Every item has a command or a place to look; record results in Phase 07 evidence
   OF-03 operational, OF-04 simulation limitations; TD-22 accepted logging trade-off; TD-09 scope assumption; TD-21 UX.
 - Validation: `git diff --check` clean; documentation-only changes.
 - Timing: see Phase 06.2 commit timestamp.
+
+### Phase 06.3 — Complete (Phase 06 In Progress)
+
+- README followed in its documented order, against a dedicated database `ServiceRequestsDb_Dryrun` selected through the
+  documented override `ConnectionStrings__ServiceRequests` (development database untouched):
+  `dotnet tool restore` OK; `dotnet restore` OK; README `dotnet ef database update …` → Done, history `InitialCreate` +
+  `AddRequestTimestamps`, PK/UNIQUE/Status indexes; `dotnet run --project src/ServiceRequests.Api` → answering on
+  http://localhost:5164, no error logs; `dotnet run --project src/ServiceRequests.Worker` → started, no error logs;
+  README API-only walkthrough → POST 201, `REQ-1` returned by `?status=Completed`.
+- Portal per README: `npm ci` (0 vulnerabilities); `cp .env.example .env.local`; `npm run dev` → http://localhost:5173
+  serving "Portal de Solicitudes" with `VITE_API_BASE_URL` = http://localhost:5164 injected; temporary `.env.local` removed.
+- README test commands: `dotnet test ServiceRequests.sln` → total 102, passed 102, failed 0, skipped 0 (TRX);
+  `npm run build && npm run lint` → OK, 0/0. `dotnet build ServiceRequests.sln` → 0 warnings, 0 errors.
+- Documentation correction: the README listed no explicit build command (implicit in `dotnet run`/`dotnet test`);
+  `dotnet build ServiceRequests.sln` added to the Tests block after running it. All other commands matched as written.
+- Cleanup: hosts and dev server stopped; `ServiceRequestsDb_Dryrun` dropped. No Windows Service installed.
+- Timing: see Phase 06.3 commit timestamp.
 
 ## Unfinished Work Template
 

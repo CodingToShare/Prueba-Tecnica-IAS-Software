@@ -177,6 +177,7 @@ The service account needs database access; LocalDB is per-user, so a service wou
 ## Tests
 
 ```bash
+dotnet build ServiceRequests.sln                                    # 0 warnings, 0 errors
 dotnet test ServiceRequests.sln                                     # 102 tests (last run: 102 passed, 0 failed, 0 skipped)
 cd frontend/service-requests-web && npm run build && npm run lint   # strict TypeScript + Vite build, oxlint
 ```
